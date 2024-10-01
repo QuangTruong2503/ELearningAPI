@@ -1,0 +1,6 @@
+services:
+  elearningapi:
+    image: ${DOCKER_REGISTRY-}elearningapi
+    build:
+      context: .
+      dockerfile: ELearningAPI/Dockerfile
