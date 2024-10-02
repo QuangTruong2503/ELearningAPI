@@ -1,5 +1,4 @@
 ﻿using ELearningAPI.Data;
-using ELearningAPI.Helpers;
 using ELearningAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
