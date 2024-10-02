@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ELearningAPI.DataTransferObject;
 using ELearningAPI.Models;
+using Microsoft.EntityFrameworkCore;
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace ELearningAPI.Controllers
@@ -17,9 +18,26 @@ namespace ELearningAPI.Controllers
         }
         // GET: api/<QuestionsController>
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<IActionResult> Get()
         {
-            return new string[] { "value1", "value2" };
+            var questions = await _context.Questions
+            .Include(q => q.options) // Bao gồm các tùy chọn (options) liên quan
+            .Select(q => new
+            {
+                QuestionId = q.question_id,
+                QuestionText = q.question_text,
+                Scores = q.scores,
+                ExamId = q.exam_id,
+                Options = q.options.Select(o => new
+                {
+                    OptionId = o.option_id,
+                    OptionText = o.option_text,
+                    IsCorrect = o.is_correct
+                }).ToList()
+            })
+            .ToListAsync();
+
+            return Ok(questions);
         }
 
         // GET api/<QuestionsController>/5
