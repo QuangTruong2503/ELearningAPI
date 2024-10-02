@@ -17,11 +17,11 @@ namespace ELearningAPI.Data
 
         //Khai báo Khóa học (Courses)
         public DbSet<CoursesModel> Courses { get; set; }
-        public DbSet<ExamsModel> exams { get; set; }
-        public DbSet<QuestionsModel> questions { get; set; }
-        public DbSet<OptionsModel> options { get; set; }
-        public DbSet<SubmissionsModel> submissions { get; set; }
-        public DbSet<AnswersModel> answers { get; set; }
-        public DbSet<EnrollmentsModel> enrollments { get; set; }
+        public DbSet<ExamsModel> Exams { get; set; }
+        public DbSet<QuestionsModel> Questions { get; set; }
+        public DbSet<OptionsModel> Options { get; set; }
+        public DbSet<SubmissionsModel> Submissions { get; set; }
+        public DbSet<AnswersModel> Answers { get; set; }
+        public DbSet<EnrollmentsModel> Enrollments { get; set; }
     }
 }
