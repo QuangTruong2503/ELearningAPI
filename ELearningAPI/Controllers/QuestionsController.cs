@@ -42,11 +42,25 @@ namespace ELearningAPI.Controllers
 
         // GET api/<QuestionsController>/5
         [HttpGet("{id}")]
-        public string Get(int id)
+        public async Task<IActionResult> GetQuestionByExamID(Guid id)
         {
-            return "value";
+            var questions = await _context.Questions.Where(q => q.exam_id == id)
+                .Select(q => new
+                {
+                    QuestionId = q.question_id,
+                    QuestionText = q.question_text,
+                    Scores = q.scores,
+                    ExamId = q.exam_id,
+                    Options = q.options.Select(o => new
+                    {
+                        OptionId = o.option_id,
+                        OptionText = o.option_text,
+                        IsCorrect = o.is_correct
+                    }).ToList()
+                })
+                .ToListAsync();
+            return Ok(questions);
         }
-
         // POST api/<QuestionsController>
         //Thêm dữ liệu câu hỏi và câu trả lời tương ứng với ID câu hỏi
         [HttpPost]
@@ -54,7 +68,7 @@ namespace ELearningAPI.Controllers
         {
             if(questionRequests == null || questionRequests.Count == 0)
             {
-                return BadRequest("No data provided.");
+                return BadRequest("Không có dữ liệu");
             }
             foreach (var questionRequest in questionRequests)
             {
@@ -75,7 +89,7 @@ namespace ELearningAPI.Controllers
                 _context.Questions.Add(question);
             }
             await _context.SaveChangesAsync();
-            return Ok("Data added successfully.");
+            return Ok("Thêm dữ liệu câu hỏi thành công.");
         }
 
         // PUT api/<QuestionsController>/5
