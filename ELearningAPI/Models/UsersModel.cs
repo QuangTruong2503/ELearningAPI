@@ -25,15 +25,7 @@ namespace ELearningAPI.Models
         [MaxLength(255)]
         public required string hashed_password { get; set; }
 
-        [Required]
-        [Column(TypeName = "varchar(20)")]
-        public UserRole user_role { get; set; } = UserRole.student;
-
+        [NotMapped]
         public DateTime created_at { get; set; } = DateTime.UtcNow;
-    }
-    public enum UserRole
-    {
-        teacher,
-        student
     }
 }

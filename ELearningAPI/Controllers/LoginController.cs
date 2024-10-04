@@ -67,22 +67,10 @@ namespace ELearningAPI.Controllers
                 UserID = user.user_id,
                 UserName = user.user_name,
                 Email = user.email,
-                UserRole = user.user_role
+                CreateAt = user.created_at,
             };
             // Nếu đăng nhập thành công
             return Ok(results);
-        }
-
-        // PUT api/<LoginController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<LoginController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
         }
     }
 }

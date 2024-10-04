@@ -1,4 +1,5 @@
 ﻿using ELearningAPI.Data;
+using ELearningAPI.Helpers;
 using ELearningAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -47,10 +48,37 @@ namespace ELearningAPI.Controllers
             }
             try
             {
+                var findUser = await _context.Users.FirstOrDefaultAsync(c => c.user_name == users.user_name || c.email == users.email);
+                if (findUser != null)
+                {
+                    if (findUser.user_name == users.user_name)
+                    {
+                        return Ok(new
+                        {
+                            message = "Tên tài khoản đã tồn tại!",
+                            isSuccess = false,
+                        });
+                    }
+                    else if (findUser.email == users.email)
+                    {
+                        return Ok(new
+                        {
+                            message = "Tên email đã tồn tại!",
+                            isSuccess = false,
+                        });
+                    }
+                    return Ok(new
+                    {
+                        message = "Gặp lỗi vui lòng thử lại!",
+                        isSuccess = false,
+                    });
+                }
                 users.user_id = Guid.NewGuid();
+                users.hashed_password = PasswordHasher.HashPassword(users.hashed_password);
+                users.created_at = DateTime.UtcNow;
                 _context.Users.Add(users);
                 await _context.SaveChangesAsync();
-                return Ok(new { message = "Insert into News successfully.", data = users });
+                return Ok(new { message = "Tạo tài khoản mới thành công.", isSuccess = true, data = users });
             }
             catch (DbUpdateException ex)
             {
