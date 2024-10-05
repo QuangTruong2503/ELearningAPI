@@ -1,5 +1,8 @@
 using ELearningAPI.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,6 +12,32 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Configuration.AddUserSecrets<Program>();
+
+//Thêm dịch vụ Token
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+    if(!string.IsNullOrEmpty(secretKey))
+    {
+        secretKey = builder.Configuration["TokenSecretKey"];
+    }
+    if (secretKey != null)
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        };
+    }
+});
 
 // Lấy chứng chỉ SSL từ biến môi trường
 var sslCaCert = Environment.GetEnvironmentVariable("SSL_CA_CERT");
@@ -32,7 +61,7 @@ if (!string.IsNullOrEmpty(sslCaCert))
         options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 }
 
-// Đăng ký dịch vụ DbContext với MySQL
+// Đăng ký dịch vụ DbContext với MySQL. Sử dụng ở local
 else
 {
     builder.Services.AddDbContext<ELearningDbContext>(options =>
@@ -44,7 +73,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins", builder =>
     {
-        builder.AllowAnyOrigin() // Địa chỉ frontend của bạn
+        builder.AllowAnyOrigin() // Cho phép sử dụng bởi bất kỳ trang web nào
                .AllowAnyHeader()
                .AllowAnyMethod();
     });

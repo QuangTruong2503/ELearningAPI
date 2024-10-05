@@ -14,9 +14,12 @@ namespace ELearningAPI.Controllers
     public class LoginController : ControllerBase
     {
         private readonly ELearningDbContext _context;
+        //Khai báo dịch vụ token
+        private readonly TokenServices _tokenServices;
         public LoginController(ELearningDbContext context)
         {
             _context = context;
+            _tokenServices = new TokenServices("23f9dc32-e9ee-4f39-b1dd-040a6b69ac21");
         }
         // GET: api/<LoginController>
         [HttpGet]
@@ -24,13 +27,6 @@ namespace ELearningAPI.Controllers
         {
             
             return Ok();
-        }
-
-        // GET api/<LoginController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
         }
 
         // POST api/<LoginController>
@@ -64,13 +60,34 @@ namespace ELearningAPI.Controllers
             {
                 message = "Đăng nhập thành công",
                 isLogin = true,
-                UserID = user.user_id,
                 UserName = user.user_name,
                 Email = user.email,
                 CreateAt = user.created_at,
+                token = _tokenServices.GenerateToken(user.user_id.ToString(), user.role_id)
             };
             // Nếu đăng nhập thành công
             return Ok(results);
+        }
+
+        //Kiểm tra token
+        [HttpGet("checkToken")]
+        public IActionResult CheckToken(string token)
+        {
+            var decode = _tokenServices.DecodeToken(token);
+            if (decode == null)
+            {
+                return Ok(new
+                {
+                    message = "Token không hợp lệ",
+                    isLogin = false
+                });
+            }
+            return Ok(new
+            {
+                message = "Token hợp lệ",
+                isLogin = true,
+                data = decode.Claims.Select(c => c.ToString()).ToArray()
+            });
         }
     }
 }

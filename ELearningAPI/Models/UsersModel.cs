@@ -27,5 +27,7 @@ namespace ELearningAPI.Models
 
         [NotMapped]
         public DateTime created_at { get; set; } = DateTime.UtcNow;
+
+        public string role_id { get; set; }
     }
 }
