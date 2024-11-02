@@ -27,6 +27,7 @@ namespace ELearningAPI.Controllers
         }
 
         // GET api/<UsersController>/5
+        
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(Guid id)
         {
@@ -37,7 +38,8 @@ namespace ELearningAPI.Controllers
             }
             return Ok(detail);
         }
-
+        
+        //Tạo tài khoản mới
         // POST api/<UsersController>
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] UsersModel users)
@@ -48,31 +50,6 @@ namespace ELearningAPI.Controllers
             }
             try
             {
-                var findUser = await _context.Users.FirstOrDefaultAsync(c => c.user_name == users.user_name || c.email == users.email);
-                if (findUser != null)
-                {
-                    if (findUser.user_name == users.user_name)
-                    {
-                        return Ok(new
-                        {
-                            message = "Tên tài khoản đã tồn tại!",
-                            isSuccess = false,
-                        });
-                    }
-                    else if (findUser.email == users.email)
-                    {
-                        return Ok(new
-                        {
-                            message = "Tên email đã tồn tại!",
-                            isSuccess = false,
-                        });
-                    }
-                    return Ok(new
-                    {
-                        message = "Gặp lỗi vui lòng thử lại!",
-                        isSuccess = false,
-                    });
-                }
                 users.user_id = Guid.NewGuid();
                 users.hashed_password = PasswordHasher.HashPassword(users.hashed_password);
                 users.created_at = DateTime.UtcNow;
@@ -82,10 +59,60 @@ namespace ELearningAPI.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return BadRequest($"Internal server error: {ex.Message}");
             }
         }
 
+        [HttpGet("check-user-and-email/username={username}&email={email}")]
+        public async Task<IActionResult> CheckAccount(string username, string email)
+        {
+            if(string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email))
+            {
+                return BadRequest("Vui lòng nhập đầy đủ thông tin tài khoản và email.");
+            }
+            try
+            {
+                var users = await _context.Users.FirstOrDefaultAsync(u => u.user_name == username || u.email == email);
+                if (users == null)
+                {
+                    return Ok(new
+                    {
+                        message = "Thông tin tài khoản và email hợp lệ.",
+                        isSuccess = true
+                    });
+                }
+                else
+                {
+
+                    if(users.user_name == username && users.email == email)
+                    {
+                        return Ok(new
+                        {
+                            message = "Thông tin tài khoản và email đã tồn tại.",
+                            isSuccess = false
+                        });
+                    }
+                    else if (users.user_name == username)
+                    {
+                        return Ok(new
+                        {
+                            message = "Tên tài khoản đã tồn tại. Vui lòng chọn tên khác",
+                            isSuccess = false
+                        });
+                    }
+                    return Ok(new
+                    {
+                        message = "Tên email đã tồn tại. Vui lòng chọn email khác",
+                        isSuccess = false
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Gặp lỗi khi kiểm tra thông tin tài khoản và email: " + ex.Message);
+            }
+
+        }
         // PUT api/<UsersController>/5
         [HttpPut]
         public async Task<IActionResult> Put( [FromBody] UsersModel user)

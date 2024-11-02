@@ -21,13 +21,6 @@ namespace ELearningAPI.Controllers
             _context = context;
             _tokenServices = new TokenServices("23f9dc32-e9ee-4f39-b1dd-040a6b69ac21");
         }
-        // GET: api/<LoginController>
-        [HttpGet]
-        public  ActionResult Get()
-        {
-            
-            return Ok();
-        }
 
         // POST api/<LoginController>
         [HttpPost]
@@ -62,6 +55,8 @@ namespace ELearningAPI.Controllers
                 isLogin = true,
                 UserName = user.user_name,
                 Email = user.email,
+                FirstName = user.first_name,
+                LastName = user.last_name,
                 CreateAt = user.created_at,
                 token = _tokenServices.GenerateToken(user.user_id.ToString(), user.role_id)
             };
@@ -70,7 +65,7 @@ namespace ELearningAPI.Controllers
         }
 
         //Kiểm tra token
-        [HttpGet("checkToken")]
+        [HttpGet("token/{token}")]
         public IActionResult CheckToken(string token)
         {
             var decode = _tokenServices.DecodeToken(token);
@@ -79,15 +74,17 @@ namespace ELearningAPI.Controllers
                 return Ok(new
                 {
                     message = "Token không hợp lệ",
-                    isLogin = false
+                    isLogin = false,
                 });
             }
             return Ok(new
             {
-                message = "Token hợp lệ",
                 isLogin = true,
+                message = "Token hợp lệ",
                 data = decode.Claims.Select(c => c.ToString()).ToArray()
             });
         }
+    
     }
+
 }
