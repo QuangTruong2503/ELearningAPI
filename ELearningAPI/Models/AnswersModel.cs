@@ -16,5 +16,9 @@ namespace ELearningAPI.Models
 
         [ForeignKey("option")]
         public int selected_option_id { get; set; }
+
+        public  SubmissionsModel? Submissions { get; set; }
+        public  QuestionsModel? Questions { get; set; }
+        public  OptionsModel? Options { get; set; }
     }
 }

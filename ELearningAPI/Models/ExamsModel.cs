@@ -16,7 +16,7 @@ namespace ELearningAPI.Models
         public int total_score { get; set; }
 
         [Required]
-        public int exam_time { get; set; }
+        public int exam_time { get; set; } = 60;
 
         public bool hide_result { get; set; } = false;
 
@@ -26,5 +26,7 @@ namespace ELearningAPI.Models
 
         [ForeignKey("course")]
         public Guid course_id { get; set; }
+
+        public CoursesModel? Courses { get; set; }
     }
 }

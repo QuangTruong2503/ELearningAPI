@@ -26,5 +26,8 @@ namespace ELearningAPI.Models
 
         [ForeignKey("subject")]
         public int subject_id { get; set; }
+
+        public  UsersModel? Users { get; set; }
+        public  SubjectsModel? Subjects { get; set; }
     }
 }

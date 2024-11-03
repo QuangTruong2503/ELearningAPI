@@ -11,13 +11,14 @@ namespace ELearningAPI.Models
         [ForeignKey("question")]
         public int question_id { get; set; }
 
-        public  QuestionsModel question { get; set; }
-
         [Required]
         [MaxLength(255)]
         public required string option_text { get; set; }
 
         [Required]
         public bool is_correct { get; set; }
+
+        public  QuestionsModel? question { get; set; }
+
     }
 }
