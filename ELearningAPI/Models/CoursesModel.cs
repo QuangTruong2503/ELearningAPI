@@ -10,13 +10,21 @@ namespace ELearningAPI.Models
 
         [Required]
         [MaxLength(255)]
-        public string course_name { get; set; }
+        public required string course_name { get; set; }
 
-        public string description { get; set; }
+        public string? description { get; set; }
+
+
+        public required string invite_code { get; set; }
+
+        public required bool is_public { get; set; }
+
+        public DateTime created_at { get; set; } = DateTime.UtcNow;
 
         [ForeignKey("user")]
         public Guid teacher_id { get; set; }
 
-        public DateTime created_at { get; set; } = DateTime.UtcNow;
+        [ForeignKey("subject")]
+        public int subject_id { get; set; }
     }
 }

@@ -25,9 +25,10 @@ namespace ELearningAPI.Controllers
 
         // GET api/<CoursesController>/5
         [HttpGet("{id}")]
-        public string Get(int id)
+        public async Task<IActionResult> Get(Guid id)
         {
-            return "value";
+            var detail =  await _context.Courses.FirstOrDefaultAsync(c => c.course_id == id);
+            return Ok(detail);
         }
 
         // POST api/<CoursesController>

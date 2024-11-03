@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using ELearningAPI.Controllers;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -96,4 +97,5 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapGet("/", () => "ELearningAPI project is running.");
 app.MapGet("/api", () => "ELearningAPI api project is running.");
+
 app.Run();
