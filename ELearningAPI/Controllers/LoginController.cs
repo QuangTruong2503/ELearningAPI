@@ -3,6 +3,7 @@ using ELearningAPI.DataTransferObject;
 using ELearningAPI.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Configuration;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -16,10 +17,19 @@ namespace ELearningAPI.Controllers
         private readonly ELearningDbContext _context;
         //Khai báo dịch vụ token
         private readonly TokenServices _tokenServices;
-        public LoginController(ELearningDbContext context)
-        {
+        private readonly IConfiguration _configuration;
+        public LoginController(ELearningDbContext context, IConfiguration configuration)
+        {       
             _context = context;
-            _tokenServices = new TokenServices("23f9dc32-e9ee-4f39-b1dd-040a6b69ac21");
+            _configuration = configuration;
+            //Lấy dữ liệu TokenKey từ biến môi trường
+            string? tokenScretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            if (string.IsNullOrEmpty(tokenScretKey))
+            {
+                Console.WriteLine("Không có khóa token được sử dụng trong LoginController");
+                tokenScretKey =  _configuration.GetValue<string>("TokenSecretKey");
+            }
+            _tokenServices = new TokenServices(tokenScretKey);
         }
 
         // POST api/<LoginController>

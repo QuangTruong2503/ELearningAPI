@@ -33,7 +33,7 @@ namespace ELearningAPI.Helpers
         public ClaimsPrincipal DecodeToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes("23f9dc32-e9ee-4f39-b1dd-040a6b69ac21");
+            var key = Encoding.UTF8.GetBytes(_secretKey);
             var tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
