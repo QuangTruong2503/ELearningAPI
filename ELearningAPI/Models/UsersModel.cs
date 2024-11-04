@@ -25,8 +25,7 @@ namespace ELearningAPI.Models
         [MaxLength(255)]
         public required string hashed_password { get; set; }
 
-        [NotMapped]
-        public DateTime created_at { get; set; } = DateTime.UtcNow;
+        public DateTime created_at { get; set; }
 
         public string? role_id { get; set; }
 

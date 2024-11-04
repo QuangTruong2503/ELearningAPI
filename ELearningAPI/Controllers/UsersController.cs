@@ -22,6 +22,7 @@ namespace ELearningAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
+            //Lấy dữ liệu Users mà không có hashed_passowrd
             var users = await _context.Users.ToListAsync();
             return Ok(users);
         }
@@ -31,7 +32,16 @@ namespace ELearningAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(Guid id)
         {
-            var detail = await _context.Users.FirstOrDefaultAsync(c => c.user_id == id);
+            var detail = await _context.Users.Select(u => new
+            {
+                u.user_id,
+                u.user_name,
+                u.email,
+                u.created_at,
+                u.first_name,
+                u.last_name,
+                u.role_id
+            }).FirstOrDefaultAsync(c => c.user_id == id);
             if (detail == null)
             {
                 return NotFound($"Không tìm thấy thông tin tài khoản: {id}");

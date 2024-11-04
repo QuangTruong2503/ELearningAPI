@@ -13,7 +13,7 @@ namespace ELearningAPI.Models
         [ForeignKey("course_id")]
         public Guid Course_ID { get; set; }
 
-        public DateTime Created_At { get; set; } = DateTime.UtcNow;
+        public DateTime Created_At { get; set; }
 
         public required string Lesson_URL { get; set; }
 

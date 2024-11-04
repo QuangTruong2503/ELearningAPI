@@ -20,7 +20,7 @@ namespace ELearningAPI.Models
 
         public bool hide_result { get; set; } = false;
 
-        public DateTime created_at { get; set; } = DateTime.UtcNow;
+        public DateTime created_at { get; set; }
 
         public DateTime? finished_at { get; set; }
 

@@ -19,7 +19,7 @@ namespace ELearningAPI.Models
 
         public required bool is_public { get; set; }
 
-        public DateTime created_at { get; set; } = DateTime.UtcNow;
+        public DateTime created_at { get; set; }
 
         [ForeignKey("user")]
         public Guid teacher_id { get; set; }
