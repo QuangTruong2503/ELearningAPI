@@ -19,13 +19,12 @@ namespace ELearningAPI.Models
         public string? first_name { get; set; }
 
         [MaxLength(255)]
-        public string? email { get; set; }
+        public required string email { get; set; }
 
-        [Required]
         [MaxLength(255)]
-        public required string hashed_password { get; set; }
+        public string? hashed_password { get; set; }
 
-        public DateTime created_at { get; set; }
+        public DateTime? created_at { get; set; }
 
         public string? role_id { get; set; }
 

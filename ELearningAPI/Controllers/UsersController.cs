@@ -46,7 +46,10 @@ namespace ELearningAPI.Controllers
             {
                 return NotFound($"Không tìm thấy thông tin tài khoản: {id}");
             }
-            return Ok(detail);
+            return Ok(new
+            {
+                data = detail
+            });
         }
         
         //Tạo tài khoản mới
@@ -127,15 +130,24 @@ namespace ELearningAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> Put( [FromBody] UsersModel user)
         {
+            var data = _context.Users.FirstOrDefault(u => u.user_id == user.user_id);
             // Kiểm tra xem User có tồn tại không
-            if (!UserExists(user.user_id))
+            if (data == null)
             {
-                return NotFound($"Không tìm thấy người dùng với ID: {user.user_id}");
+                return NotFound(new
+                {
+                    message = $"Không tìm thấy người dùng với ID: {user.user_id}",
+                    isSuccess = false
+                });
             }
-            // Đánh dấu trạng thái của đối tượng user cần cập nhật
-            _context.Entry(user).State = EntityState.Modified;
             try
             {
+                data.user_id = user.user_id;
+                data.user_name = user.user_name;
+                data.email = user.email;
+                data.first_name = user.first_name;
+                data.last_name = user.last_name;
+                data.role_id = user.role_id;
                 // Lưu thay đổi vào cơ sở dữ liệu
                 await _context.SaveChangesAsync();
             }
@@ -144,14 +156,22 @@ namespace ELearningAPI.Controllers
                 // Kiểm tra xem User có tồn tại không
                 if (!UserExists(user.user_id))
                 {
-                    return NotFound($"Không tìm thấy người dùng với ID: {user.user_id}");
+                    return NotFound( new
+                    {
+                        message = $"Không tìm thấy người dùng với ID: {user.user_id}",
+                        isSuccess = false
+                    });
                 }
                 else
                 {
                     throw;
                 }
             }
-            return Ok("Cập nhật dữ liệu người dùng thành công!");
+            return Ok(new
+            {
+                message = "Cập nhật dữ liệu người dùng thành công!",
+                isSuccess = true
+            });
         }
 
         // DELETE api/<UsersController>/5
