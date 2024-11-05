@@ -3,7 +3,7 @@ using ELearningAPI.DataTransferObject;
 using ELearningAPI.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Configuration;
+using System.Text.Json;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -63,12 +63,16 @@ namespace ELearningAPI.Controllers
             {
                 message = "Đăng nhập thành công",
                 isLogin = true,
-                UserName = user.user_name,
-                Email = user.email,
-                FirstName = user.first_name,
-                LastName = user.last_name,
-                CreateAt = user.created_at,
-                token = _tokenServices.GenerateToken(user.user_id.ToString(), user.role_id)
+                data = new
+                {
+                    UserName = user.user_name,
+                    Email = user.email,
+                    FirstName = user.first_name,
+                    LastName = user.last_name,
+                    CreateAt = user.created_at,
+                    avatar = user.avatar_url,
+                    token = _tokenServices.GenerateToken(user.user_id.ToString(), user.role_id)
+                }
             };
             // Nếu đăng nhập thành công
             return Ok(results);
@@ -84,14 +88,14 @@ namespace ELearningAPI.Controllers
                 return Ok(new
                 {
                     message = "Token không hợp lệ",
-                    isLogin = false,
+                    success = false,
                 });
             }
             return Ok(new
             {
-                isLogin = true,
+                success = true,
                 message = "Token hợp lệ",
-                data = decode.Claims.Select(c => c.ToString()).ToArray()
+                data = decode
             });
         }
     

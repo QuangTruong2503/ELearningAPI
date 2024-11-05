@@ -26,6 +26,8 @@ namespace ELearningAPI.Models
 
         public DateTime? created_at { get; set; }
 
+        public string? avatar_url { get; set; }
+
         public string? role_id { get; set; }
 
     }
