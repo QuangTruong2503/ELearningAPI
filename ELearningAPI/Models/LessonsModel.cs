@@ -15,8 +15,6 @@ namespace ELearningAPI.Models
 
         public DateTime Created_At { get; set; }
 
-        public required string Lesson_URL { get; set; }
-
         public  CoursesModel? Courses { get; set; }
     }
 }

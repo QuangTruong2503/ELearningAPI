@@ -18,7 +18,7 @@ namespace ELearningAPI.Models
         public float scores { get; set; }
 
         // List of Options associated with this question
-        public List<OptionsModel> options { get; set; } = new List<OptionsModel>();
+        public List<OptionsModel>? options { get; set; }
         public  ExamsModel? Exams { get; set; }
     }
 }
