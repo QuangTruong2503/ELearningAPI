@@ -20,7 +20,34 @@ namespace ELearningAPI.Controllers
         public async Task<IActionResult> Get()
         {
             var courses = await _context.Courses.ToListAsync();
-            return Ok(courses);
+            var results = from course in _context.Courses
+                          join teacher in _context.Users
+                          on course.teacher_id equals teacher.user_id
+                          join subject in _context.Subjects
+                          on course.subject_id equals subject.subject_id
+                          select new
+                          {
+                              CourseID = course.course_id,
+                              CourseName = course.course_name,
+                              Description = course.description,
+                              InviteCode = course.invite_code,
+                              IsPublic = course.is_public,
+                              CreatedAt = course.created_at,
+                              Thumbnail = course.thumbnail,
+                              TeacherID = teacher.user_id,
+                              TeacherFullName = $"{teacher.first_name} {teacher.last_name}",
+                              SubjectID = subject.subject_id,
+                              SubjectName = subject.subject_name,
+                          };
+            return Ok(results);
+        }
+
+        //Lấy dữ liệu Khóa học public
+        [HttpGet("courses/public")]
+        public async Task<IActionResult> GetCoursesPublic()
+        {
+            var coursesPublic = await _context.Courses.Where(c => c.is_public == true).ToListAsync();
+            return Ok(coursesPublic);
         }
 
         // GET api/<CoursesController>/5
