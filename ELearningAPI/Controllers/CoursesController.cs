@@ -17,9 +17,8 @@ namespace ELearningAPI.Controllers
         }
         // GET: api/<CoursesController>
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public ActionResult Get()
         {
-            var courses = await _context.Courses.ToListAsync();
             var results = from course in _context.Courses
                           join teacher in _context.Users
                           on course.teacher_id equals teacher.user_id
@@ -42,12 +41,69 @@ namespace ELearningAPI.Controllers
             return Ok(results);
         }
 
-        //Lấy dữ liệu Khóa học public
-        [HttpGet("courses/public")]
-        public async Task<IActionResult> GetCoursesPublic()
+        //Lấy dữ liệu Khóa học theo trạng thái public
+        [HttpGet("public/{status}")]
+        public ActionResult GetCoursesPublic(bool status)
         {
-            var coursesPublic = await _context.Courses.Where(c => c.is_public == true).ToListAsync();
-            return Ok(coursesPublic);
+            var results = from course in _context.Courses
+                          join teacher in _context.Users
+                          on course.teacher_id equals teacher.user_id
+                          join subject in _context.Subjects
+                          on course.subject_id equals subject.subject_id
+                          where course.is_public == status
+                          select new
+                          {
+                              CourseID = course.course_id,
+                              CourseName = course.course_name,
+                              Description = course.description,
+                              InviteCode = course.invite_code,
+                              IsPublic = course.is_public,
+                              CreatedAt = course.created_at,
+                              Thumbnail = course.thumbnail,
+                              TeacherID = teacher.user_id,
+                              TeacherFullName = $"{teacher.first_name} {teacher.last_name}",
+                              SubjectID = subject.subject_id,
+                              SubjectName = subject.subject_name,
+                          };
+            return Ok(results);
+        }
+
+
+        //Lấy dữ liệu Course theo trạng thái public và SubjectID
+        [HttpGet("get/bySubject")]
+        public ActionResult GetCourses([FromQuery] bool? isPublic, [FromQuery] string subject)
+        {
+            var query = _context.Courses.AsQueryable();
+
+            if (isPublic.HasValue)
+            {
+                query = query.Where(course => course.is_public == isPublic.Value);
+            }
+
+            if (!string.IsNullOrEmpty(subject))
+            {
+                query = query.Where(course => course.subject_id == subject);
+            }
+
+            var results = query
+                .Join(_context.Users,
+                      course => course.teacher_id,
+                      teacher => teacher.user_id,
+                      (course, teacher) => new { course, teacher })
+                .Select(ct => new
+                {
+                    CourseID = ct.course.course_id,
+                    CourseName = ct.course.course_name,
+                    Description = ct.course.description,
+                    InviteCode = ct.course.invite_code,
+                    IsPublic = ct.course.is_public,
+                    CreatedAt = ct.course.created_at,
+                    Thumbnail = ct.course.thumbnail,
+                    TeacherID = ct.teacher.user_id,
+                    TeacherFullName = $"{ct.teacher.first_name} {ct.teacher.last_name}"
+                });
+
+            return Ok(results);
         }
 
         // GET api/<CoursesController>/5

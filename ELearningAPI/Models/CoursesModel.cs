@@ -22,7 +22,7 @@ namespace ELearningAPI.Models
 
         public Guid teacher_id { get; set; }
 
-        public int subject_id { get; set; }
+        public required string subject_id { get; set; }
 
     }
 }
