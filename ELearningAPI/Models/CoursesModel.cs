@@ -12,13 +12,13 @@ namespace ELearningAPI.Models
 
         public string? description { get; set; }
 
-        public required string invite_code { get; set; }
+        public  string? invite_code { get; set; }
 
         public required bool is_public { get; set; }
 
         public DateTime created_at { get; set; }
 
-        public string? thumbnail { get; set; }
+        public string? thumbnail { get; set; } = "https://res.cloudinary.com/brandocloud/image/upload/v1730959170/ELearning/Courses/courses-default.png";
 
         public Guid teacher_id { get; set; }
 

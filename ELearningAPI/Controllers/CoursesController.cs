@@ -1,4 +1,6 @@
 ﻿using ELearningAPI.Data;
+using ELearningAPI.Helpers;
+using ELearningAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -116,8 +118,36 @@ namespace ELearningAPI.Controllers
 
         // POST api/<CoursesController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<IActionResult> Post(CoursesModel model)
         {
+            try
+            {
+                string newCode;
+                bool codeExists;
+                do
+                {
+                    newCode = GetRandomCode.GetVerificationCode();
+                    codeExists = await _context.Courses.AnyAsync(c => c.invite_code == newCode);
+                } while (codeExists);
+                //Khai báo dữ liệu
+                model.course_id = new Guid();
+                model.invite_code = newCode;
+                model.created_at = DateTime.UtcNow; 
+
+                //Thêm dữ liệu
+                _context.Courses.Add(model);
+                await _context.SaveChangesAsync();
+                return Ok(new
+                {
+                    success = true,
+                    message = "Tạo khóa học thành công!"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Gặp lỗi khi thêm khóa học: " + ex.Message);
+            }
+            
         }
 
         // PUT api/<CoursesController>/5
