@@ -3,6 +3,7 @@ using ELearningAPI.Helpers;
 using ELearningAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -125,10 +126,33 @@ namespace ELearningAPI.Controllers
 
         // GET api/<CoursesController>/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(Guid id)
+        public ActionResult Get(Guid id)
         {
-            var detail =  await _context.Courses.FirstOrDefaultAsync(c => c.course_id == id);
-            return Ok(detail);
+            var query = _context.Courses.AsQueryable();
+            var results = query
+                .Where(c => c.course_id == id)
+                .Join(_context.Users,
+                      course => course.teacher_id,
+                      teacher => teacher.user_id,
+                      (course, teacher) => new { course, teacher })
+                .Select(ct => new
+                {
+                    CourseID = ct.course.course_id,
+                    CourseName = ct.course.course_name,
+                    Description = ct.course.description,
+                    InviteCode = ct.course.invite_code,
+                    IsPublic = ct.course.is_public,
+                    CreatedAt = ct.course.created_at,
+                    Thumbnail = ct.course.thumbnail,
+                    TeacherID = ct.teacher.user_id,
+                    TeacherFullName = $"{ct.teacher.first_name} {ct.teacher.last_name}",
+                    SubjectID = ct.course.subject_id,
+                }).FirstOrDefault();
+            if (results == null)
+            {
+                return BadRequest("Không có dữ liệu khóa học với ID = " + id);
+            }
+            return Ok(results);
         }
 
         // POST api/<CoursesController>
@@ -166,9 +190,32 @@ namespace ELearningAPI.Controllers
         }
 
         // PUT api/<CoursesController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut]
+        public async Task<IActionResult> Put(CoursesModel model)
         {
+            try
+            {
+                var course = await _context.Courses.FirstOrDefaultAsync(c => c.course_id == model.course_id);
+                if (course != null)
+                {
+                    course.course_id = model.course_id;
+                    course.course_name = model.course_name;
+                    course.description = model.description;
+                    course.is_public = model.is_public;
+                    course.subject_id = model.subject_id;
+                    course.thumbnail = model.thumbnail;
+                    await _context.SaveChangesAsync();
+                }
+                return Ok(new
+                {
+                    success = true,
+                    message = "Cập nhật khóa học thành công"
+                });
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // DELETE api/<CoursesController>/5
