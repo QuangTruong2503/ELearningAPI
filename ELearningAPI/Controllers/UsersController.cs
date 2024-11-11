@@ -3,6 +3,7 @@ using ELearningAPI.Helpers;
 using ELearningAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Buffers;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -20,11 +21,27 @@ namespace ELearningAPI.Controllers
         }
         // GET: api/<UsersController>
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get(int page = 1, int pageSize = 10, string? search = null)
         {
             //Lấy dữ liệu Users mà không có hashed_passowrd
             var users = await _context.Users.ToListAsync();
-            return Ok(users);
+            if (!string.IsNullOrEmpty(search))
+            {
+                users = users.Where(u => u.email.Contains(search) || u.first_name.Contains(search) || u.last_name.Contains(search)).ToList();
+            }
+
+            //Phân trang
+            var usersCount = users.Count();
+            users = users.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var totalPages = (int)Math.Ceiling(usersCount / (double)pageSize);
+            var currentPage = page;
+            return Ok(new
+            {
+                searchValues = search,
+                pages = totalPages,
+                current = currentPage,
+                data = users
+            });
         }
 
         // GET api/<UsersController>/5

@@ -19,8 +19,9 @@ namespace ELearningAPI.Controllers
         }
         // GET: api/<CoursesController>
         [HttpGet]
-        public ActionResult Get()
+        public ActionResult Get(int page = 1, int pageSize = 10, string? searchName = null)
         {
+            var query = _context.Courses.AsQueryable();
             var results = from course in _context.Courses
                           join teacher in _context.Users
                           on course.teacher_id equals teacher.user_id
@@ -40,7 +41,21 @@ namespace ELearningAPI.Controllers
                               SubjectID = subject.subject_id,
                               SubjectName = subject.subject_name,
                           };
-            return Ok(results);
+            if (!string.IsNullOrEmpty(searchName))
+            {
+                results = results.Where(c => c.CourseName.Contains(searchName));
+            }
+            //Phân trang
+            var count = results.Count();
+            var totalPages = (int)Math.Ceiling(count / (double)pageSize);
+            results = results.Skip((page - 1) * pageSize).Take(pageSize);
+            var currentPage = page;
+            return Ok(new
+            {
+                totalPages = totalPages,
+                currentPage = currentPage,
+                data = results
+            });
         }
 
         //Lấy dữ liệu Khóa học theo trạng thái public
