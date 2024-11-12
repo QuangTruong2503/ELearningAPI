@@ -124,6 +124,34 @@ namespace ELearningAPI.Controllers
             return Ok(results);
         }
 
+        //Lấy dữ liệu Course theo người tạo teacherID
+        [HttpGet("teacher")]
+        public async Task<IActionResult> GetCoursesByTeacher(Guid id, int page = 1, int pageSize = 8, string? search = null)
+        {
+            try
+            {
+                var courses = await _context.Courses.Where(c => c.teacher_id == id).OrderBy(c => c.course_name).ToListAsync();
+                if (search != null)
+                {
+                    courses = courses.Where(c => c.course_name.Contains(search)).ToList();
+                }
+                //Phân trang
+                var count = courses.Count();
+                var totals = (int)Math.Ceiling(count / (double)pageSize);
+                courses = courses.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                return Ok(new
+                {
+                    currentPage = page,
+                    totalPages = totals,
+                    Data = courses
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         // GET api/<CoursesController>/5
         [HttpGet("{id}")]
         public ActionResult Get(Guid id)
@@ -220,8 +248,27 @@ namespace ELearningAPI.Controllers
 
         // DELETE api/<CoursesController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> Delete(Guid id)
         {
+            var course = await _context.Courses.FindAsync(id);
+            if (course == null)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = $"Không tìm thấy thông tin khóa học: {id}"
+                });
+            }
+
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Xóa khóa học: {course.course_name} thành công!"
+            });
         }
+
     }
 }

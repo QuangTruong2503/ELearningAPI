@@ -195,15 +195,26 @@ namespace ELearningAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deleteID = await _context.Users.FindAsync(id);
-            if (deleteID != null)
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
             {
-                _context.Users.Remove(deleteID);
-                await _context.SaveChangesAsync();
-                return Ok(new { message = $"Xóa tài khoản: {id} thành công!" });
+                return BadRequest(new
+                {
+                    success = false,
+                    message = $"Không tìm thấy thông tin tài khoản: {id}"
+                });
             }
-            return BadRequest($"Không tìm thấy thông tin tài khoản: {id}");
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Xóa tài khoản: {id} thành công!"
+            });
         }
+
         private bool UserExists(Guid id)
         {
             return _context.Users.Any(e => e.user_id == id);
