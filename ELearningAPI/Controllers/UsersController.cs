@@ -57,6 +57,7 @@ namespace ELearningAPI.Controllers
                 u.created_at,
                 u.first_name,
                 u.last_name,
+                u.avatar_url,
                 u.role_id
             }).FirstOrDefaultAsync(c => c.user_id == id);
             if (detail == null)
@@ -164,6 +165,7 @@ namespace ELearningAPI.Controllers
                 data.email = user.email;
                 data.first_name = user.first_name;
                 data.last_name = user.last_name;
+                data.avatar_url = user.avatar_url;
                 data.role_id = user.role_id;
                 // Lưu thay đổi vào cơ sở dữ liệu
                 await _context.SaveChangesAsync();

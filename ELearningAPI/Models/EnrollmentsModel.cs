@@ -15,8 +15,5 @@ namespace ELearningAPI.Models
         public Guid student_id { get; set; }
 
         public DateTime enrolled_at { get; set; }
-
-        public  CoursesModel? Courses { get; set; }
-        public  UsersModel? Users { get; set; }
     }
 }
