@@ -1,5 +1,6 @@
 ﻿using ELearningAPI.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -14,11 +15,12 @@ namespace ELearningAPI.Controllers
         {
             _context = context;
         }
-        // GET: api/<ExamsController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        // Lấy dữ liệu các bài thi theo Course
+        [HttpGet("by-course/{courseID}")]
+        public async Task<IActionResult> Get(Guid courseID)
         {
-            return new string[] { "value1", "value2" };
+            var exams = await _context.Exams.Where(e => e.course_id == courseID).ToListAsync();
+            return Ok(exams);
         }
 
         // GET api/<ExamsController>/5

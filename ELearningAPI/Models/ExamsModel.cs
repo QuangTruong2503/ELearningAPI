@@ -26,7 +26,5 @@ namespace ELearningAPI.Models
 
         [ForeignKey("course")]
         public Guid course_id { get; set; }
-
-        public CoursesModel? Courses { get; set; }
     }
 }
