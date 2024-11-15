@@ -152,9 +152,9 @@ namespace ELearningAPI.Controllers
             }
         }
 
-        // GET api/<CoursesController>/5
+        // Lấy dữ liệu Course với ID
         [HttpGet("{id}")]
-        public ActionResult Get(Guid id)
+        public async Task<IActionResult> Get(Guid id)
         {
             var query = _context.Courses.AsQueryable();
             var results = query
@@ -176,11 +176,19 @@ namespace ELearningAPI.Controllers
                     TeacherFullName = $"{ct.teacher.first_name} {ct.teacher.last_name}",
                     SubjectID = ct.course.subject_id,
                 }).FirstOrDefault();
+            //Lấy số liệu bài học với bài thi với courseID
+            var lessonsCount = await _context.Lessons.Where(l => l.Course_ID == id).CountAsync();
+            var examsCount = await _context.Exams.Where(e => e.course_id == id).CountAsync();
             if (results == null)
             {
                 return BadRequest("Không có dữ liệu khóa học với ID = " + id);
             }
-            return Ok(results);
+            return Ok(new
+            {
+                Data = results,
+                lessonsCount = lessonsCount,
+                examsCount = examsCount
+            });
         }
 
         // POST api/<CoursesController>

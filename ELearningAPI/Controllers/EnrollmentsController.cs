@@ -64,13 +64,27 @@ namespace ELearningAPI.Controllers
 
         // Thêm dữ liệu tham gia khóa học
         [HttpPost]
-        public async Task<IActionResult> Post(EnrollmentsModel model)
+        public async Task<IActionResult> Post(Guid userID, Guid courseID)
         {
 
             try
             {
-                model.enrolled_at = DateTime.Now;
-                _context.Add(model);
+                var enroll = await _context.Enrollments.FirstOrDefaultAsync(e => e.course_id == courseID || e.student_id == userID);
+                if (enroll != null)
+                {
+                    return Ok(new
+                    {
+                        success = false,
+                        message = "Bạn đã tham gia khóa học!"
+                    });
+                }
+                EnrollmentsModel model = new EnrollmentsModel()
+                {
+                    student_id = userID,
+                    course_id = courseID,
+                    enrolled_at = DateTime.UtcNow,
+                };
+                _context.Enrollments.Add(model);
                 await _context.SaveChangesAsync();
                 return Ok(new
                 {
