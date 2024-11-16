@@ -176,19 +176,11 @@ namespace ELearningAPI.Controllers
                     TeacherFullName = $"{ct.teacher.first_name} {ct.teacher.last_name}",
                     SubjectID = ct.course.subject_id,
                 }).FirstOrDefault();
-            //Lấy số liệu bài học với bài thi với courseID
-            var lessonsCount = await _context.Lessons.Where(l => l.Course_ID == id).CountAsync();
-            var examsCount = await _context.Exams.Where(e => e.course_id == id).CountAsync();
             if (results == null)
             {
                 return BadRequest("Không có dữ liệu khóa học với ID = " + id);
             }
-            return Ok(new
-            {
-                Data = results,
-                lessonsCount = lessonsCount,
-                examsCount = examsCount
-            });
+            return Ok(results);
         }
 
         // POST api/<CoursesController>

@@ -19,8 +19,16 @@ namespace ELearningAPI.Controllers
         [HttpGet("by-course/{courseID}")]
         public async Task<IActionResult> Get(Guid courseID)
         {
-            var exams = await _context.Exams.Where(e => e.course_id == courseID).ToListAsync();
-            return Ok(exams);
+            try
+            {
+                var exams = await _context.Exams.Where(e => e.course_id == courseID).ToListAsync();
+                return Ok(exams);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // GET api/<ExamsController>/5
