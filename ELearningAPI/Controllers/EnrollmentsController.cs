@@ -54,22 +54,50 @@ namespace ELearningAPI.Controllers
             }
         }
 
-        // Lấy dữ liệu theo userID
+        // Lấy dữ liệu Courses theo userID đã tham gia
         [HttpGet("by-user")]
-        public async Task<IActionResult> Get(Guid userID)
+        public async Task<IActionResult> Get(Guid userID, int page = 1, int pageSize = 8, string? search = null)
         {
-            var enrolls = await _context.Enrollments.Where(e => e.student_id == userID).ToListAsync();
-            var courses = new List<CoursesModel>();
-            foreach (var enroll in enrolls)
+            try
             {
-                var course = await _context.Courses.FirstOrDefaultAsync(c => c.course_id == enroll.course_id);
-                if (course != null)
+                // Lấy danh sách các khóa học của sinh viên bằng cách join trực tiếp
+                var query = from enroll in _context.Enrollments
+                            join course in _context.Courses on enroll.course_id equals course.course_id
+                            where enroll.student_id == userID
+                            select course;
+
+                // Lọc theo từ khóa nếu có
+                if (!string.IsNullOrEmpty(search))
                 {
-                    courses.Add(course);
+                    query = query.Where(c => c.course_name.Contains(search));
                 }
+
+                // Tổng số khóa học
+                var count = await query.CountAsync();
+
+                // Phân trang và lấy dữ liệu
+                var courses = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                // Tính tổng số trang
+                var totalPages = (int)Math.Ceiling(count / (double)pageSize);
+
+                // Trả kết quả
+                return Ok(new
+                {
+                    currentPage = page,
+                    totalPages = totalPages,
+                    Data = courses
+                });
             }
-            return Ok(courses);
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
+
 
         // Thêm dữ liệu tham gia khóa học
         [HttpPost]
