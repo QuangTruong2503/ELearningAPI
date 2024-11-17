@@ -130,15 +130,28 @@ namespace ELearningAPI.Controllers
         {
             try
             {
-                var courses = await _context.Courses.Where(c => c.teacher_id == id).OrderBy(c => c.course_name).ToListAsync();
+                var query = from course in _context.Courses
+                            join user in _context.Users on course.teacher_id equals user.user_id
+                            where course.teacher_id == id
+                            orderby course.course_name
+                            select new
+                            {
+                                course.course_id,
+                                course.course_name,
+                                course.description,
+                                course.invite_code,
+                                course.is_public,
+                                course.thumbnail,
+                                teacherFullName = user.first_name + " " + user.last_name
+                            };
                 if (search != null)
                 {
-                    courses = courses.Where(c => c.course_name.Contains(search)).ToList();
+                    query = query.Where(c => c.course_name.Contains(search));
                 }
                 //Phân trang
-                var count = courses.Count();
+                var count = await query.CountAsync();
                 var totals = (int)Math.Ceiling(count / (double)pageSize);
-                courses = courses.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                var courses = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
                 return Ok(new
                 {
                     currentPage = page,

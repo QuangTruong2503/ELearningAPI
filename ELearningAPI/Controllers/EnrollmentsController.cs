@@ -63,8 +63,18 @@ namespace ELearningAPI.Controllers
                 // Lấy danh sách các khóa học của sinh viên bằng cách join trực tiếp
                 var query = from enroll in _context.Enrollments
                             join course in _context.Courses on enroll.course_id equals course.course_id
+                            join user in _context.Users on course.teacher_id equals user.user_id
                             where enroll.student_id == userID
-                            select course;
+                            select new
+                            {
+                                course.course_id,
+                                course.course_name,
+                                course.description,
+                                course.invite_code,
+                                course.is_public,
+                                course.thumbnail,
+                                teacherFullName = user.first_name + " " + user.last_name
+                            };
 
                 // Lọc theo từ khóa nếu có
                 if (!string.IsNullOrEmpty(search))
