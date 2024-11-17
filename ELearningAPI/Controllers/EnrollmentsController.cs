@@ -98,7 +98,55 @@ namespace ELearningAPI.Controllers
             }
         }
 
+        //Lấy dữ liệu người dùng đã tham gia khóa học theo mã khóa học
+        [HttpGet("get/users-by-course")]
+        public async Task<IActionResult> GetUsersInCourse(Guid courseID, int page = 1, int pageSize = 8, string? search = null)
+        {
+            try
+            {
+                // Lấy danh sách các khóa học của sinh viên bằng cách join trực tiếp
+                var query = from enroll in _context.Enrollments
+                            join user in _context.Users on enroll.student_id equals user.user_id
+                            where enroll.course_id == courseID
+                            select new
+                            {
+                                user.user_id,
+                                user.first_name,
+                                user.last_name,
+                                user.avatar_url,
+                            };
 
+                // Lọc theo từ khóa nếu có
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(u => u.first_name.Contains(search) || u.last_name.Contains(search));
+                }
+
+                // Tổng số khóa học
+                var count = await query.CountAsync();
+
+                // Phân trang và lấy dữ liệu
+                var users = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                // Tính tổng số trang
+                var totalPages = (int)Math.Ceiling(count / (double)pageSize);
+
+                // Trả kết quả
+                return Ok(new
+                {
+                    currentPage = page,
+                    totalPages = totalPages,
+                    Data = users
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
         // Thêm dữ liệu tham gia khóa học
         [HttpPost]
         public async Task<IActionResult> Post(Guid userID, Guid courseID)
@@ -106,7 +154,7 @@ namespace ELearningAPI.Controllers
 
             try
             {
-                var enroll = await _context.Enrollments.FirstOrDefaultAsync(e => e.course_id == courseID || e.student_id == userID);
+                var enroll = await _context.Enrollments.FirstOrDefaultAsync(e => e.course_id == courseID && e.student_id == userID);
                 if (enroll != null)
                 {
                     return Ok(new
