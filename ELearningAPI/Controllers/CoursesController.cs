@@ -183,6 +183,26 @@ namespace ELearningAPI.Controllers
             return Ok(results);
         }
 
+        //Kiểm tra người dùng có phải là người sở hữu khóa học thông qua teacherID
+        [HttpGet("check-owner-course")]
+        public async Task<IActionResult> CheckOwnerCourse(Guid userID, Guid courseID)
+        {
+            var check = await _context.Courses.Where(c => c.course_id == courseID && c.teacher_id == userID).AnyAsync();
+            if (check == false)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Bạn không phải là người sở hữu khóa học"
+                });
+            }
+            return Ok(new
+            {
+                success = true,
+                message = "Bạn là người sở hữu khóa học"
+            });
+        }
+
         // POST api/<CoursesController>
         [HttpPost]
         public async Task<IActionResult> Post(CoursesModel model)
