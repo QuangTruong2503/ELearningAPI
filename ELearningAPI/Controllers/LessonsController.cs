@@ -21,8 +21,19 @@ namespace ELearningAPI.Controllers
         {
             try
             {
+                var result = new List<object>();
                 var lessons = await _context.Lessons.Where(l => l.Course_ID == courseID).ToListAsync();
-                return Ok(lessons);
+                foreach (var lesson in lessons)
+                {
+                    var leslink = await _context.Lesson_Links.Where(l => l.Lesson_ID == lesson.Lesson_ID).ToListAsync();
+                    var data = new
+                    {
+                        lessonData = lesson,
+                        lessonLink = leslink
+                    };
+                    result.Add(data);
+                }
+                return Ok(result);
             }
             catch (Exception ex)
             {

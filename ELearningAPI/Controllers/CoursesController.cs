@@ -220,6 +220,7 @@ namespace ELearningAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(CoursesModel model)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 string newCode;
@@ -233,10 +234,20 @@ namespace ELearningAPI.Controllers
                 model.course_id = new Guid();
                 model.invite_code = newCode;
                 model.created_at = DateTime.UtcNow; 
-
+                
                 //Thêm dữ liệu
                 _context.Courses.Add(model);
+                //Thêm người tạo vào enrollment
+                var enroll = new EnrollmentsModel()
+                {
+                    course_id = model.course_id,
+                    enrolled_at = DateTime.UtcNow,
+                    student_id = model.teacher_id,
+                };
+                _context.Enrollments.Add(enroll);
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
                 return Ok(new
                 {
                     success = true,
@@ -245,7 +256,13 @@ namespace ELearningAPI.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest("Gặp lỗi khi thêm khóa học: " + ex.Message);
+                await transaction.RollbackAsync();
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi tạo khóa học!",
+                    error = ex.Message
+                });
             }
             
         }
