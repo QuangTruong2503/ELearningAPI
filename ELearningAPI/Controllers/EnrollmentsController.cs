@@ -161,7 +161,15 @@ namespace ELearningAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Guid userID, Guid courseID)
         {
-
+            var course = await _context.Courses.AnyAsync(c => c.course_id == courseID);
+            if (!course)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Khóa học không tồn tại"
+                });
+            }
             try
             {
                 var enroll = await _context.Enrollments.FirstOrDefaultAsync(e => e.course_id == courseID && e.student_id == userID);

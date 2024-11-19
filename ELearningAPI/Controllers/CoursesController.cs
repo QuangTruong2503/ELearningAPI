@@ -320,5 +320,36 @@ namespace ELearningAPI.Controllers
             });
         }
 
+        //Xác nhận mật khẩu để xóa Course
+        [HttpDelete("confirm-password-delete-course")]
+        public async Task<IActionResult> ConfirmPassForDelete(Guid courseID, string password)
+        {
+            var course = await _context.Courses.FirstOrDefaultAsync(c => c.course_id == courseID);
+            if (course == null)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Không tìm thấy dữ liệu khóa học."
+                });
+            }
+            var userPassowrd = await _context.Users.Where(u => u.user_id == course.teacher_id).Select(u => u.hashed_password).FirstOrDefaultAsync();
+            if (!PasswordHasher.VerifyPassword(password, userPassowrd))
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Mật khẩu không trùng khớp."
+                });
+            }
+            //Xóa khóa học
+            _context.Remove(course);
+            await _context.SaveChangesAsync();
+            return Ok(new
+            {
+                success = true,
+                message = "Xóa khóa học thành công."
+            });
+        }
     }
 }
