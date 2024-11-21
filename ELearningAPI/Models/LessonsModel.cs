@@ -6,7 +6,7 @@ namespace ELearningAPI.Models
     public class LessonsModel
     {
         [Key]
-        public int Lesson_ID { get; set; }
+        public Guid Lesson_ID { get; set; }
 
         public required string Lesson_Name { get; set; }
 
