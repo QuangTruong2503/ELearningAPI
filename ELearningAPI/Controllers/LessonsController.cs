@@ -51,116 +51,134 @@ namespace ELearningAPI.Controllers
         }
 
         // POST api/<LessonsController>
-        [HttpPost("lessons-and-lessonlinks")]
+        [HttpPost("update/lessons-and-lessonlinks")]
         public async Task<IActionResult> UpsertLesson([FromBody] List<LessonRequestDto> lessonRequests)
         {
             if (lessonRequests == null || !lessonRequests.Any())
                 return BadRequest("Request data is empty.");
 
-            // Lấy danh sách Lesson_ID từ JSON
+            // Danh sách Lesson_ID từ JSON
             var lessonIdsFromJson = lessonRequests.Select(l => l.LessonData.Lesson_ID).ToList();
 
-            // Lấy danh sách tất cả Lesson_ID trong DB
-            var existingLessonIds = await _context.Lessons.Select(l => l.Lesson_ID).ToListAsync();
+            // Lấy tất cả các bài học hiện có trong DB
+            var existingLessons = await _context.Lessons.ToListAsync();
+            var existingLessonIds = existingLessons.Select(l => l.Lesson_ID).ToHashSet();
 
-            // Tìm các Lesson_ID cần xóa (có trong DB nhưng không có trong JSON)
-            var lessonsToDelete = existingLessonIds.Except(lessonIdsFromJson).ToList();
+            // Xóa các bài học không có trong JSON
+            var lessonsToDelete = existingLessons.Where(l => !lessonIdsFromJson.Contains(l.Lesson_ID)).ToList();
+            _context.Lessons.RemoveRange(lessonsToDelete);
 
-            // Xóa bài học và các liên kết liên quan
-            foreach (var lessonId in lessonsToDelete)
-            {
-                var lessonLinks = _context.Lesson_Links.Where(link => link.Lesson_ID == lessonId);
-                _context.Lesson_Links.RemoveRange(lessonLinks);
+            // Chuẩn bị danh sách thêm mới hoặc cập nhật bài học
+            var lessonsToAdd = new List<LessonsModel>();
+            var lessonsToUpdate = new List<LessonsModel>();
 
-                var lesson = await _context.Lessons.FindAsync(lessonId);
-                if (lesson != null)
-                {
-                    _context.Lessons.Remove(lesson);
-                }
-            }
-
-            // Xử lý thêm mới hoặc cập nhật các bài học
             foreach (var lessonRequest in lessonRequests)
             {
-                // Xử lý dữ liệu Lesson
-                var lesson = await _context.Lessons
-                    .FirstOrDefaultAsync(l => l.Lesson_ID == lessonRequest.LessonData.Lesson_ID);
+                var lessonData = lessonRequest.LessonData;
 
-                if (lesson == null)
+                // Kiểm tra bài học đã tồn tại chưa
+                var existingLesson = existingLessons.FirstOrDefault(l => l.Lesson_ID == lessonData.Lesson_ID);
+                if (existingLesson == null)
                 {
-                    // Nếu không tồn tại, thêm mới
-                    lesson = new LessonsModel
+                    // Thêm mới bài học
+                    lessonsToAdd.Add(new LessonsModel
                     {
-                        Lesson_ID = new Guid(),
-                        Lesson_Name = lessonRequest.LessonData.Lesson_Name,
-                        Course_ID = lessonRequest.LessonData.Course_ID,
+                        Lesson_Name = lessonData.Lesson_Name,
+                        Course_ID = lessonData.Course_ID,
                         Created_At = DateTime.UtcNow
-                    };
-                    await _context.Lessons.AddAsync(lesson);
+                    });
                 }
                 else
                 {
-                    // Nếu đã tồn tại, cập nhật
-                    lesson.Lesson_Name = lessonRequest.LessonData.Lesson_Name;
-                    lesson.Course_ID = lessonRequest.LessonData.Course_ID;
-                    _context.Lessons.Update(lesson);
+                    // Cập nhật bài học
+                    existingLesson.Lesson_Name = lessonData.Lesson_Name;
+                    existingLesson.Course_ID = lessonData.Course_ID;
+                    lessonsToUpdate.Add(existingLesson);
                 }
+            }
 
-                // Xử lý dữ liệu LessonLinks
-                var linkIdsFromJson = lessonRequest.LessonLink.Select(link => link.Link_ID).ToList();
+            // Áp dụng thêm mới và cập nhật bài học
+            if (lessonsToAdd.Any())
+                await _context.Lessons.AddRangeAsync(lessonsToAdd);
 
-                // Lấy danh sách Link_ID hiện có trong DB cho bài học này
-                var existingLinkIds = await _context.Lesson_Links
-                    .Where(link => link.Lesson_ID == lesson.Lesson_ID)
-                    .Select(link => link.Link_ID)
-                    .ToListAsync();
+            if (lessonsToUpdate.Any())
+                _context.Lessons.UpdateRange(lessonsToUpdate);
 
-                // Tìm các Link_ID cần xóa
-                var linksToDelete = existingLinkIds.Except(linkIdsFromJson).ToList();
-                foreach (var linkId in linksToDelete)
-                {
-                    var link = await _context.Lesson_Links.FindAsync(linkId);
-                    if (link != null)
-                    {
-                        _context.Lesson_Links.Remove(link);
-                    }
-                }
+            // Lưu bài học trước khi xử lý liên kết
+            await _context.SaveChangesAsync();
 
-                // Thêm mới hoặc cập nhật các liên kết từ JSON
+            // Lấy danh sách tất cả các bài học mới (bao gồm cả bài học vừa thêm)
+            var allLessons = await _context.Lessons.ToListAsync();
+            var allLessonIds = allLessons.Select(l => l.Lesson_ID).ToHashSet();
+
+            // Lấy danh sách liên kết hiện có trong DB
+            var existingLinks = await _context.Lesson_Links
+                .Where(link => allLessonIds.Contains(link.Lesson_ID))
+                .ToListAsync();
+
+            // Chuẩn bị danh sách liên kết cần xử lý
+            var linksToDelete = new List<LessonLinksModel>();
+            var linksToAdd = new List<LessonLinksModel>();
+            var linksToUpdate = new List<LessonLinksModel>();
+
+            foreach (var lessonRequest in lessonRequests)
+            {
+                var lessonData = lessonRequest.LessonData;
+
+                // Tìm bài học sau khi đảm bảo nó đã được lưu
+                var lesson = allLessons.FirstOrDefault(l => l.Lesson_Name == lessonData.Lesson_Name);
+
+                if (lesson == null)
+                    return BadRequest($"Không thể tìm thấy bài học: {lessonData.Lesson_Name}");
+
+                var linkIdsFromJson = lessonRequest.LessonLink.Select(link => link.Link_ID).ToHashSet();
+                var existingLinksForLesson = existingLinks.Where(link => link.Lesson_ID == lesson.Lesson_ID).ToList();
+
+                // Tìm liên kết cần xóa
+                linksToDelete.AddRange(existingLinksForLesson.Where(link => !linkIdsFromJson.Contains(link.Link_ID)));
+
                 foreach (var link in lessonRequest.LessonLink)
                 {
-                    var existingLink = await _context.Lesson_Links
-                        .FirstOrDefaultAsync(l => l.Link_ID == link.Link_ID);
-
+                    var existingLink = existingLinksForLesson.FirstOrDefault(l => l.Link_ID == link.Link_ID);
                     if (existingLink == null)
                     {
-                        // Thêm mới liên kết nếu không tồn tại
-                        var newLink = new LessonLinksModel
+                        // Thêm mới liên kết
+                        linksToAdd.Add(new LessonLinksModel
                         {
-                            Link_ID = new Guid(),
+                            Link_ID = link.Link_ID,
                             Link_Name = link.Link_Name,
                             Link_URL = link.Link_URL,
-                            Lesson_ID = lesson.Lesson_ID, // Liên kết với bài học hiện tại
-                            Created_At = DateTime.UtcNow,
-                        };
-                        await _context.Lesson_Links.AddAsync(newLink);
+                            Lesson_ID = lesson.Lesson_ID,
+                            Created_At = DateTime.UtcNow
+                        });
                     }
                     else
                     {
-                        // Cập nhật liên kết nếu đã tồn tại
+                        // Cập nhật liên kết
                         existingLink.Link_Name = link.Link_Name;
                         existingLink.Link_URL = link.Link_URL;
-                        _context.Lesson_Links.Update(existingLink);
+                        linksToUpdate.Add(existingLink);
                     }
                 }
             }
 
-            // Lưu thay đổi vào DB
+            // Áp dụng thêm mới, cập nhật và xóa liên kết
+            if (linksToDelete.Any())
+                _context.Lesson_Links.RemoveRange(linksToDelete);
+
+            if (linksToAdd.Any())
+                await _context.Lesson_Links.AddRangeAsync(linksToAdd);
+
+            if (linksToUpdate.Any())
+                _context.Lesson_Links.UpdateRange(linksToUpdate);
+
+            // Lưu tất cả thay đổi vào DB
             await _context.SaveChangesAsync();
 
-            return Ok("Lưu thay đổi thành công.");
+            return Ok(new { message = "Lưu thay đổi thành công." });
         }
-    
+
+
 
         // PUT api/<LessonsController>/5
         [HttpPut("{id}")]
