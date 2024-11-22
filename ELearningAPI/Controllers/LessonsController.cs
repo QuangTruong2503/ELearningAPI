@@ -54,8 +54,6 @@ namespace ELearningAPI.Controllers
         [HttpPost("update/lessons-and-lessonlinks")]
         public async Task<IActionResult> UpsertLesson([FromBody] List<LessonRequestDto> lessonRequests)
         {
-            if (lessonRequests == null || !lessonRequests.Any())
-                return BadRequest("Request data is empty.");
 
             // Danh sách Lesson_ID từ JSON
             var lessonIdsFromJson = lessonRequests.Select(l => l.LessonData.Lesson_ID).ToList();

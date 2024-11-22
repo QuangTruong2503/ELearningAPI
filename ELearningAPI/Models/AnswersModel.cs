@@ -12,10 +12,10 @@ namespace ELearningAPI.Models
         public Guid submission_id { get; set; }
 
         [ForeignKey("question")]
-        public int question_id { get; set; }
+        public Guid question_id { get; set; }
 
         [ForeignKey("option")]
-        public int selected_option_id { get; set; }
+        public Guid selected_option_id { get; set; }
 
         public  SubmissionsModel? Submissions { get; set; }
         public  QuestionsModel? Questions { get; set; }

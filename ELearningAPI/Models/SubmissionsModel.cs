@@ -16,9 +16,7 @@ namespace ELearningAPI.Models
 
         public DateTime submitted_at { get; set; }
 
-        public int? scores { get; set; }
+        public float scores { get; set; }
 
-        public ExamsModel? Exams { get; set; }
-        public UsersModel? Users { get; set; }
     }
 }

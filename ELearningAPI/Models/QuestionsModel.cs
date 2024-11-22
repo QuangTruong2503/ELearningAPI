@@ -6,7 +6,7 @@ namespace ELearningAPI.Models
     public class QuestionsModel
     {
         [Key]
-        public int question_id { get; set; }
+        public Guid question_id { get; set; }
 
         [ForeignKey("exam")]
         public Guid exam_id { get; set; }
@@ -16,9 +16,5 @@ namespace ELearningAPI.Models
 
         [Required]
         public float scores { get; set; }
-
-        // List of Options associated with this question
-        public List<OptionsModel>? options { get; set; }
-        public  ExamsModel? Exams { get; set; }
     }
 }

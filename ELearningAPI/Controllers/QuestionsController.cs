@@ -16,57 +16,70 @@ namespace ELearningAPI.Controllers
         {
             _context = context;
         }
+        [HttpGet("Auto-update-ID")]
+        public async Task<IActionResult> AutoUpdateID()
+        {
+            var questions = await _context.Questions.ToListAsync();
+            return Ok(questions);
+        }
+
         // GET: api/<QuestionsController>
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            var questions = await _context.Questions
-            .Include(q => q.options) // Bao gồm các tùy chọn (options) liên quan
-            .Select(q => new
-            {
-                QuestionId = q.question_id,
-                QuestionText = q.question_text,
-                Scores = q.scores,
-                ExamId = q.exam_id,
-                Options = q.options.Select(o => new
-                {
-                    OptionId = o.option_id,
-                    OptionText = o.option_text,
-                    IsCorrect = o.is_correct
-                }).ToList()
-            })
-            .ToListAsync();
+            var results = from question in _context.Questions
+                          join option in _context.Options
+                          on question.question_id equals option.question_id into optionGroup
+                          select new
+                          {
+                              QuestionId = question.question_id,
+                              QuestionText = question.question_text,
+                              Scores = question.scores,
+                              ExamId = question.exam_id,
+                              Options = optionGroup.Select(o => new
+                              {
+                                  OptionId = o.option_id,
+                                  OptionText = o.option_text,
+                                  IsCorrect = o.is_correct
+                              }).ToList()
+                          };
 
-            return Ok(questions);
+            return Ok(results);
+
         }
 
         // GET api/<QuestionsController>/5
-        [HttpGet("{id}")]
+        [HttpGet("by-examID")]
         public async Task<IActionResult> GetQuestionByExamID(Guid id)
         {
-            var questions = await _context.Questions.Where(q => q.exam_id == id)
-                .Select(q => new
+            var results = await _context.Questions
+                .Where(q => q.exam_id == id)
+                .Select(question => new
                 {
-                    QuestionId = q.question_id,
-                    QuestionText = q.question_text,
-                    Scores = q.scores,
-                    ExamId = q.exam_id,
-                    Options = q.options.Select(o => new
-                    {
-                        OptionId = o.option_id,
-                        OptionText = o.option_text,
-                        IsCorrect = o.is_correct
-                    }).ToList()
+                    QuestionId = question.question_id,
+                    QuestionText = question.question_text,
+                    Scores = question.scores,
+                    ExamId = question.exam_id,
+                    Options = _context.Options
+                        .Where(option => option.question_id == question.question_id)
+                        .Select(option => new
+                        {
+                            OptionId = option.option_id,
+                            OptionText = option.option_text,
+                            IsCorrect = option.is_correct
+                        }).ToList()
                 })
                 .ToListAsync();
-            return Ok(questions);
+
+            return Ok(results);
         }
+
         // POST api/<QuestionsController>
-        //Thêm dữ liệu câu hỏi và câu trả lời tương ứng với ID câu hỏi
+        //Thêm dữ liệu câu hỏi và các câu trả lời tương ứng với ID câu hỏi
         [HttpPost]
         public async Task<IActionResult> AddQuestions([FromBody] List<QuestionsRequest> questionRequests)
         {
-            if(questionRequests == null || questionRequests.Count == 0)
+            if (questionRequests == null || questionRequests.Count == 0)
             {
                 return BadRequest("Không có dữ liệu");
             }
@@ -75,16 +88,11 @@ namespace ELearningAPI.Controllers
                 // Create new Question entity
                 var question = new QuestionsModel
                 {
+                    question_id = new Guid(),
                     question_text = questionRequest.QuestionText,
                     scores = questionRequest.Scores,
-                    exam_id = questionRequest.ExamId,
-                    options = questionRequest.Options.Select(o => new OptionsModel
-                    {
-                        option_text = o.OptionText,
-                        is_correct = o.IsCorrect
-                    }).ToList()
+                    exam_id = questionRequest.ExamId
                 };
-
                 // Add question and related options to context
                 _context.Questions.Add(question);
             }

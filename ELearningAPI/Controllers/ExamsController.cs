@@ -31,11 +31,19 @@ namespace ELearningAPI.Controllers
             
         }
 
-        // GET api/<ExamsController>/5
+        // Lấy dữ liệu theo ExamID
         [HttpGet("{id}")]
-        public string Get(int id)
+        public async Task<IActionResult> GetByExamID(Guid id)
         {
-            return "value";
+            try
+            {
+                var exam = await _context.Exams.FirstOrDefaultAsync(e => e.exam_id == id);
+                return Ok(exam);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Lỗi khi truy vấn dữ liệu bài thi" + ex.Message);
+            }
         }
 
         // POST api/<ExamsController>

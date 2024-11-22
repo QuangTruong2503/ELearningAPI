@@ -6,10 +6,10 @@ namespace ELearningAPI.Models
     public class OptionsModel
     {
         [Key]
-        public int option_id { get; set; }
+        public Guid option_id { get; set; }
 
-        [ForeignKey("question")]
-        public int question_id { get; set; }
+        [ForeignKey("questions")]
+        public Guid question_id { get; set; }
 
         [Required]
         [MaxLength(255)]
@@ -17,8 +17,6 @@ namespace ELearningAPI.Models
 
         [Required]
         public bool is_correct { get; set; }
-
-        public  QuestionsModel? question { get; set; }
 
     }
 }
