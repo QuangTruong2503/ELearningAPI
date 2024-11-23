@@ -74,30 +74,41 @@ namespace ELearningAPI.Controllers
             return Ok(results);
         }
 
-        // POST api/<QuestionsController>
         //Thêm dữ liệu câu hỏi và các câu trả lời tương ứng với ID câu hỏi
-        [HttpPost]
-        public async Task<IActionResult> AddQuestions([FromBody] List<QuestionsRequest> questionRequests)
+        [HttpPut]
+        public async Task<IActionResult> UpsertQuestion([FromBody] QuestionRequest request)
         {
-            if (questionRequests == null || questionRequests.Count == 0)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Không có dữ liệu");
+                return BadRequest(ModelState);
             }
-            foreach (var questionRequest in questionRequests)
+
+            var question = new QuestionsModel
             {
-                // Create new Question entity
-                var question = new QuestionsModel
-                {
-                    question_id = new Guid(),
-                    question_text = questionRequest.QuestionText,
-                    scores = questionRequest.Scores,
-                    exam_id = questionRequest.ExamId
-                };
-                // Add question and related options to context
-                _context.Questions.Add(question);
-            }
+                question_id = Guid.NewGuid(),
+                exam_id = request.examId,
+                question_text = request.questionText,
+                scores = request.scores,
+            };
+
+            var options = request.options.Select(option => new OptionsModel
+            {
+                option_id = Guid.NewGuid(),
+                question_id = question.question_id,
+                option_text = option.optionText,
+                is_correct = option.isCorrect
+            }).ToList();
+
+            _context.Questions.Add(question);
+            _context.Options.AddRange(options);
+
             await _context.SaveChangesAsync();
-            return Ok("Thêm dữ liệu câu hỏi thành công.");
+
+            return Ok(new
+            {
+                success = true,
+                message = "Cập nhật dữ liệu bài thi thành công."
+            });
         }
 
         // PUT api/<QuestionsController>/5
@@ -111,5 +122,21 @@ namespace ELearningAPI.Controllers
         public void Delete(int id)
         {
         }
+    }
+
+    public class QuestionRequest
+    {
+        public Guid questionId { get; set; }
+        public string questionText { get; set; }
+        public float scores { get; set; }
+        public Guid examId { get; set; }
+        public List<OptionRequest> options { get; set; }
+    }
+
+    public class OptionRequest
+    {
+        public Guid optionId { get; set; }
+        public string optionText { get; set; }
+        public bool isCorrect { get; set; }
     }
 }
