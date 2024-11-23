@@ -8,7 +8,6 @@ namespace ELearningAPI.Models
         [Key]
         public Guid option_id { get; set; }
 
-        [ForeignKey("questions")]
         public Guid question_id { get; set; }
 
         [Required]
@@ -18,5 +17,7 @@ namespace ELearningAPI.Models
         [Required]
         public bool is_correct { get; set; }
 
+        [ForeignKey("question_id")]
+        public virtual QuestionsModel Questions { get; set; }
     }
 }

@@ -17,36 +17,40 @@ namespace ELearningAPI.Controllers
             _context = context;
         }
         [HttpGet("Auto-update-ID")]
-        public async Task<IActionResult> AutoUpdateID()
+        public async Task<IActionResult> GetAll()
         {
-            var questions = await _context.Questions.ToListAsync();
-            return Ok(questions);
+
+            return Ok();
         }
 
         // GET: api/<QuestionsController>
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> GetQuestionsWithOptions()
         {
-            var results = from question in _context.Questions
-                          join option in _context.Options
-                          on question.question_id equals option.question_id into optionGroup
-                          select new
-                          {
-                              QuestionId = question.question_id,
-                              QuestionText = question.question_text,
-                              Scores = question.scores,
-                              ExamId = question.exam_id,
-                              Options = optionGroup.Select(o => new
-                              {
-                                  OptionId = o.option_id,
-                                  OptionText = o.option_text,
-                                  IsCorrect = o.is_correct
-                              }).ToList()
-                          };
+            var results = await _context.Questions
+                .Select(question => new
+                {
+                    QuestionId = question.question_id, // Sử dụng tên thuộc tính từ model
+                    QuestionText = question.question_text,
+                    Scores = question.scores,
+                    ExamId = question.exam_id,
+                    Options = question.Options.Select(option => new
+                    {
+                        OptionId = option.option_id,
+                        OptionText = option.option_text,
+                        IsCorrect = option.is_correct
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            if (results == null || !results.Any())
+            {
+                return NotFound(new { Message = "No questions found." });
+            }
 
             return Ok(results);
-
         }
+
 
         // GET api/<QuestionsController>/5
         [HttpGet("by-examID")]
@@ -60,8 +64,7 @@ namespace ELearningAPI.Controllers
                     QuestionText = question.question_text,
                     Scores = question.scores,
                     ExamId = question.exam_id,
-                    Options = _context.Options
-                        .Where(option => option.question_id == question.question_id)
+                    Options = question.Options
                         .Select(option => new
                         {
                             OptionId = option.option_id,
@@ -75,41 +78,102 @@ namespace ELearningAPI.Controllers
         }
 
         //Thêm dữ liệu câu hỏi và các câu trả lời tương ứng với ID câu hỏi
-        [HttpPut]
-        public async Task<IActionResult> UpsertQuestion([FromBody] QuestionRequest request)
+        [HttpPost("upsert-questions-and-options")]
+        public async Task<IActionResult> UpsertQuestion([FromBody] List<QuestionRequest> questionsRequest)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var question = new QuestionsModel
+            foreach (var request in questionsRequest)
             {
-                question_id = Guid.NewGuid(),
-                exam_id = request.examId,
-                question_text = request.questionText,
-                scores = request.scores,
-            };
+                // Kiểm tra xem câu hỏi đã tồn tại trong database hay chưa
+                var existingQuestion = await _context.Questions
+                    .Include(q => q.Options) // Bao gồm các tùy chọn liên quan
+                    .FirstOrDefaultAsync(q => q.question_id == request.questionId);
 
-            var options = request.options.Select(option => new OptionsModel
-            {
-                option_id = Guid.NewGuid(),
-                question_id = question.question_id,
-                option_text = option.optionText,
-                is_correct = option.isCorrect
-            }).ToList();
+                if (existingQuestion != null)
+                {
+                    // Cập nhật thông tin câu hỏi
+                    existingQuestion.exam_id = request.examId;
+                    existingQuestion.question_text = request.questionText;
+                    existingQuestion.scores = request.scores;
 
-            _context.Questions.Add(question);
-            _context.Options.AddRange(options);
+                    // Xử lý các tùy chọn (Options)
+                    var incomingOptions = request.options.Select(o => new
+                    {
+                        o.optionId,
+                        o.optionText,
+                        o.isCorrect
+                    }).ToList();
+
+                    // Xóa các tùy chọn không còn tồn tại
+                    var optionsToDelete = existingQuestion.Options
+                        .Where(o => !incomingOptions.Any(io => io.optionId == o.option_id))
+                        .ToList();
+                    _context.Options.RemoveRange(optionsToDelete);
+
+                    // Cập nhật hoặc thêm các tùy chọn
+                    foreach (var option in incomingOptions)
+                    {
+                        var existingOption = existingQuestion.Options
+                            .FirstOrDefault(o => o.option_id == option.optionId);
+
+                        if (existingOption != null)
+                        {
+                            // Cập nhật tùy chọn
+                            existingOption.option_text = option.optionText;
+                            existingOption.is_correct = option.isCorrect;
+                        }
+                        else
+                        {
+                            // Thêm mới tùy chọn
+                            var newOption = new OptionsModel
+                            {
+                                option_id = option.optionId,
+                                question_id = existingQuestion.question_id,
+                                option_text = option.optionText,
+                                is_correct = option.isCorrect
+                            };
+                            _context.Options.Add(newOption);
+                        }
+                    }
+                }
+                else
+                {
+                    // Thêm mới câu hỏi
+                    var newQuestion = new QuestionsModel
+                    {
+                        question_id = request.questionId,
+                        exam_id = request.examId,
+                        question_text = request.questionText,
+                        scores = request.scores,
+                    };
+
+                    var newOptions = request.options.Select(option => new OptionsModel
+                    {
+                        option_id = option.optionId,
+                        question_id = newQuestion.question_id,
+                        option_text = option.optionText,
+                        is_correct = option.isCorrect
+                    }).ToList();
+
+                    _context.Questions.Add(newQuestion);
+                    _context.Options.AddRange(newOptions);
+                }
+            }
 
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 success = true,
-                message = "Cập nhật dữ liệu bài thi thành công."
+                message = "Cập nhật dữ liệu các câu hỏi thành công."
             });
         }
+
+
 
         // PUT api/<QuestionsController>/5
         [HttpPut("{id}")]

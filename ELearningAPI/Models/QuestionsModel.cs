@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.CodeAnalysis.Options;
 
 namespace ELearningAPI.Models
 {
@@ -8,7 +9,6 @@ namespace ELearningAPI.Models
         [Key]
         public Guid question_id { get; set; }
 
-        [ForeignKey("exam")]
         public Guid exam_id { get; set; }
 
         [Required]
@@ -16,5 +16,11 @@ namespace ELearningAPI.Models
 
         [Required]
         public float scores { get; set; }
+        // Navigation property for the foreign key to Exams
+        [ForeignKey("exam_id")]
+        public virtual ExamsModel Exams { get; set; } // Assuming there is an Exam model
+
+        // Navigation property for the related options
+        public virtual ICollection<OptionsModel> Options { get; set; }
     }
 }

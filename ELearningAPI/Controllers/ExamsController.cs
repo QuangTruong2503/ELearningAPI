@@ -1,4 +1,5 @@
 ﻿using ELearningAPI.Data;
+using ELearningAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,9 +54,25 @@ namespace ELearningAPI.Controllers
         }
 
         // PUT api/<ExamsController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut("update-exam")]
+        public async Task<IActionResult> Put(ExamsModel model)
         {
+            var exam = await _context.Exams.AnyAsync(e => e.exam_id == model.exam_id);
+            if (!exam)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Không tồn tại bài thi này."
+                });
+            }
+            _context.Exams.Update(model);
+            await _context.SaveChangesAsync();
+            return Ok(new
+            {
+                success = true,
+                message = "Cập nhật dữ liệu bài thi thành công"
+            });
         }
 
         // DELETE api/<ExamsController>/5
