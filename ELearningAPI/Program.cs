@@ -55,7 +55,8 @@ if (!string.IsNullOrEmpty(sslCaCert))
     var MySQLPassword = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
 
     // Cập nhật chuỗi kết nối MySQL với đường dẫn chứng chỉ
-    string connectionString = $"Server={serverName};Port=22588;Database=ELearning;User={MySQLUserName};Password={MySQLPassword};SslMode=REQUIRED;SslCa={caCertPath};";
+    string connectionString = $"Server={serverName};Port=22588;Database=ELearning;" +
+        $"User={MySQLUserName};Password={MySQLPassword};SslMode=REQUIRED;SslCa={caCertPath};";
 
     // Cấu hình DbContext với chuỗi kết nối MySQL
     builder.Services.AddDbContext<ELearningDbContext>(options =>

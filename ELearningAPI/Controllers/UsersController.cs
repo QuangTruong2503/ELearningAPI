@@ -64,10 +64,7 @@ namespace ELearningAPI.Controllers
             {
                 return NotFound($"Không tìm thấy thông tin tài khoản: {id}");
             }
-            return Ok(new
-            {
-                data = detail
-            });
+            return Ok(detail);
         }
         
         //Tạo tài khoản mới
