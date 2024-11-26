@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ELearningAPI.DataTransferObject;
 using ELearningAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.CodeAnalysis.Options;
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace ELearningAPI.Controllers
@@ -76,22 +77,57 @@ namespace ELearningAPI.Controllers
 
             return Ok(results);
         }
-
+        //Lấy dữ liệu câu hỏi cho bài làm của học sinh
+        [HttpGet("get/without-correct-option")]
+        public async Task<IActionResult> GetQuestionNoCorrectOption(Guid examID)
+        {
+            var result = await _context.Questions.Where(q => q.exam_id == examID).Select(q => new
+            {
+                QuestionId = q.question_id,
+                QuestionText = q.question_text,
+                Scores = q.scores,
+                ExamId = q.exam_id,
+                Options = q.Options.Select(o => new {
+                    OptionId = o.option_id,
+                    OptionText = o.option_text,
+                    IsCorrect = false
+                }).ToList()
+            }).ToListAsync();
+            return Ok(result);
+        }
         //Thêm dữ liệu câu hỏi và các câu trả lời tương ứng với ID câu hỏi
         [HttpPost("upsert-questions-and-options")]
-        public async Task<IActionResult> UpsertQuestion([FromBody] List<QuestionRequest> questionsRequest)
+        public async Task<IActionResult> UpsertQuestion([FromBody] List<QuestionsRequestDTO.QuestionRequest> questionsRequest)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
+            // Lấy danh sách tất cả các câu hỏi hiện có trong database
+            var existingQuestions = await _context.Questions
+                .Include(q => q.Options) // Bao gồm các tùy chọn liên quan
+                .ToListAsync();
+
+            // Lấy danh sách các questionId được truyền vào
+            var incomingQuestionIds = questionsRequest.Select(q => q.questionId).ToList();
+
+            // Xóa các câu hỏi trong database không có trong danh sách questionId được truyền vào
+            var questionsToDelete = existingQuestions
+                .Where(eq => !incomingQuestionIds.Contains(eq.question_id))
+                .ToList();
+
+            if (questionsToDelete.Any())
+            {
+                _context.Questions.RemoveRange(questionsToDelete);
+            }
+
+            // Xử lý thêm/cập nhật câu hỏi và các tùy chọn
             foreach (var request in questionsRequest)
             {
                 // Kiểm tra xem câu hỏi đã tồn tại trong database hay chưa
-                var existingQuestion = await _context.Questions
-                    .Include(q => q.Options) // Bao gồm các tùy chọn liên quan
-                    .FirstOrDefaultAsync(q => q.question_id == request.questionId);
+                var existingQuestion = existingQuestions
+                    .FirstOrDefault(q => q.question_id == request.questionId);
 
                 if (existingQuestion != null)
                 {
@@ -188,19 +224,5 @@ namespace ELearningAPI.Controllers
         }
     }
 
-    public class QuestionRequest
-    {
-        public Guid questionId { get; set; }
-        public string questionText { get; set; }
-        public float scores { get; set; }
-        public Guid examId { get; set; }
-        public List<OptionRequest> options { get; set; }
-    }
-
-    public class OptionRequest
-    {
-        public Guid optionId { get; set; }
-        public string optionText { get; set; }
-        public bool isCorrect { get; set; }
-    }
+    
 }

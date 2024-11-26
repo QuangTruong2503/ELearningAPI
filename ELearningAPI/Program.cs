@@ -73,9 +73,9 @@ else
 // Thêm CORS vào dịch vụ
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins", builder =>
+    options.AddPolicy("AllowSpecificOrigins", builder =>
     {
-        builder.AllowAnyOrigin() // Cho phép sử dụng bởi bất kỳ trang web nào
+        builder.WithOrigins("http://localhost:3000") // Cho phép sử dụng bởi bất kỳ trang web nào
                .AllowAnyHeader()
                .AllowAnyMethod();
     });
@@ -90,7 +90,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 // Áp dụng chính sách CORS
-app.UseCors("AllowAllOrigins");
+app.UseCors("AllowSpecificOrigins");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
