@@ -25,10 +25,23 @@ namespace ELearningAPI.Controllers
         }
 
         // GET api/<SubmissionsController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("check/exam-user-available")]
+        public async Task<IActionResult> CheckExamAndUserExists(Guid userID, Guid examID)
         {
-            return "value";
+            var submission = await _context.Submissions.AnyAsync(s => s.student_id == userID && s.exam_id == examID);
+            if (submission)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Bạn đã hoàn thành bài thi này."
+                });
+            }
+            return Ok(new
+            {
+                success = true,
+                message = "Bạn có thể tiến hành làm bài thi"
+            });
         }
         [HttpPost]
         public async Task<IActionResult> Post(Guid questionID, Guid optionID, Guid submissionID)
