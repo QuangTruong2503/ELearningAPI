@@ -24,7 +24,7 @@ namespace ELearningAPI.Models
         [MaxLength(255)]
         public string? hashed_password { get; set; }
 
-        public DateTime? created_at { get; set; }
+        public DateTimeOffset? created_at { get; set; }
 
         public string? avatar_url { get; set; }
 

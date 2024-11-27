@@ -20,9 +20,9 @@ namespace ELearningAPI.Models
 
         public bool hide_result { get; set; } = false;
 
-        public DateTime created_at { get; set; }
+        public DateTimeOffset created_at { get; set; }
 
-        public DateTime? finished_at { get; set; }
+        public DateTimeOffset? finished_at { get; set; }
 
         [ForeignKey("course")]
         public Guid course_id { get; set; }

@@ -17,33 +17,72 @@ namespace ELearningAPI.Controllers
         {
             _context = context;
         }
-        // GET: api/<SubmissionsController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        // Lấy thông tin bài làm
+        [HttpGet("by-submissionID")]
+        public async Task<IActionResult> GetSubmissionByID(Guid submissionID, Guid userID)
         {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET api/<SubmissionsController>/5
-        [HttpGet("check/exam-user-available")]
-        public async Task<IActionResult> CheckExamAndUserExists(Guid userID, Guid examID)
-        {
-            var submission = await _context.Submissions.AnyAsync(s => s.student_id == userID && s.exam_id == examID);
-            if (submission)
+            var data = await _context.Submissions.FirstOrDefaultAsync(s => s.submission_id == submissionID);
+            if (data == null)
             {
                 return Ok(new
                 {
                     success = false,
-                    message = "Bạn đã hoàn thành bài thi này."
+                    message = "Không tìm thấy khóa học"
+                });
+            }
+            if (data.student_id != userID)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Bạn không phải là người tạo bài thi này"
                 });
             }
             return Ok(new
             {
-                success = true,
-                message = "Bạn có thể tiến hành làm bài thi"
+                data = data,
+                success = true
             });
         }
+
         [HttpPost]
+        public async Task<IActionResult> CreateSubmission([FromBody] SubmissionsModel model)
+        {
+            var sumission = await _context.Submissions.FirstOrDefaultAsync(s => s.student_id == model.student_id && s.exam_id == model.exam_id);
+            if (sumission != null)
+            {
+                if (sumission.submitted_at != null)
+                {
+                    return Ok(new
+                    {
+                        success = false,
+                        message = "Bạn đã hoàn thành bài kiểm tra này."
+                    });
+                }
+                    return Ok(new
+                    {
+                        isTesting = true,
+                        submissionID = sumission.submission_id
+                    });
+            };
+            var newData = new SubmissionsModel()
+            {
+                submission_id = Guid.NewGuid(),
+                student_id = model.student_id,
+                exam_id = model.exam_id,
+                started_at = model.started_at,
+                scores = 0
+            };
+            _context.Submissions.Add(newData);
+            await _context.SaveChangesAsync();
+            return Ok(new
+            {
+                success = true,
+                message = "Bạn có thể tiến hành kiểm tra.",
+                submissionID = newData.submission_id
+            });
+        }
+        [HttpPost("insert-questions-options")]
         public async Task<IActionResult> Post(Guid questionID, Guid optionID, Guid submissionID)
         {
             var answer = new AnswersModel()
@@ -58,18 +97,17 @@ namespace ELearningAPI.Controllers
             return Ok("Thêm dữ liệu thành công");
         }
         // Tạo bài làm của học sinh
-        [HttpPost("create-submission")]
+        [HttpPost("insert-answers")]
         public async Task<IActionResult> CreateSubmission(
             [FromBody] List<QuestionsRequestDTO.QuestionRequest> questionRequests,
-            Guid examID,
-            Guid studentID)
+            Guid submissionID)
         {
             using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
                 {
                     // Kiểm tra nếu sinh viên đã nộp bài kiểm tra
-                    if (await _context.Submissions.AnyAsync(s => s.exam_id == examID && s.student_id == studentID))
+                    if (await _context.Submissions.AnyAsync(s => s.submission_id == submissionID && s.submitted_at != null))
                     {
                         return Ok(new
                         {
@@ -79,7 +117,7 @@ namespace ELearningAPI.Controllers
                     }
 
                     // Kiểm tra tính hợp lệ của các câu hỏi
-                    if (questionRequests.Any(q => q.examId != examID))
+                    if (questionRequests.Any(q => q.examId != _context.Submissions.Where(s => s.submission_id == submissionID).Select(s => s.exam_id).FirstOrDefault()))
                     {
                         return BadRequest(new
                         {
@@ -87,19 +125,16 @@ namespace ELearningAPI.Controllers
                             message = "Có câu hỏi không thuộc bài kiểm tra này."
                         });
                     }
-
-                    // Tạo Submission
-                    var submission = new SubmissionsModel
+                    //Lấy dữ liệu submission
+                    var submission = await _context.Submissions.FirstOrDefaultAsync(s => s.submission_id == submissionID);
+                    if (submission == null)
                     {
-                        submission_id = Guid.NewGuid(),
-                        student_id = studentID,
-                        exam_id = examID,
-                        submitted_at = DateTime.UtcNow,
-                        scores = 0
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "Bài làm không hợp lệ"
+                        });
                     };
-                    _context.Submissions.Add(submission);
-                    await _context.SaveChangesAsync(); // Lưu Submission trước
-
                     // Tạo Answers
                     var answers = questionRequests.Select(question =>
                     {
@@ -107,7 +142,7 @@ namespace ELearningAPI.Controllers
                         return new AnswersModel
                         {
                             answer_id = Guid.NewGuid(),
-                            submission_id = submission.submission_id,
+                            submission_id = submissionID,
                             question_id = question.questionId,
                             selected_option_id = selectedOption?.optionId ?? Guid.Empty
                         };
@@ -115,10 +150,53 @@ namespace ELearningAPI.Controllers
 
                     await _context.Answers.AddRangeAsync(answers);
 
-                    // Tính điểm
-                    submission.scores = questionRequests
-                        .Where(q => q.options.Any(o => o.isCorrect))
-                        .Sum(q => q.scores);
+                    // Tính tổng điểm cho bài làm
+                    float totalScore = 0;
+                    var correctOptions = await _context.Questions
+                        .Select(question => new
+                        {
+                            QuestionId = question.question_id,
+                            QuestionText = question.question_text,
+                            Scores = question.scores,
+                            ExamId = question.exam_id,
+                            Options = question.Options.Where(o => o.is_correct == true)
+                                .Select(option => new
+                                {
+                                    OptionId = option.option_id,
+                                    OptionText = option.option_text,
+                                    IsCorrect = option.is_correct
+                                }).ToList()
+                        })
+                        .ToListAsync();
+                    
+                    foreach (var userQuestion in questionRequests)
+                    {
+                        //Tìm câu hỏi tương ứng trong bài làm với câu hỏi mẫu
+                        var correctQuestion = correctOptions.FirstOrDefault(o => o.QuestionId == userQuestion.questionId);
+                        if (correctQuestion != null)
+                        {
+                            // Lấy danh sách đáp án đúng
+                            var correctOptionIds = correctQuestion.Options
+                                .Where(o => o.IsCorrect)
+                                .Select(o => o.OptionId)
+                                .ToHashSet();
+                            // Lấy danh sách đáp án mà người dùng gửi lên
+                            var userOptionIds = userQuestion.options
+                                .Where(o => o.isCorrect)
+                                .Select(o => o.optionId)
+                                .ToHashSet();
+                            // Nếu các đáp án khớp nhau, cộng điểm
+                            if (userOptionIds.SetEquals(correctOptionIds))
+                            {
+                                totalScore += correctQuestion.Scores;
+                            }
+
+                        }
+                    }
+                    //Cập nhật thời gian nộp bài
+                    submission.scores = totalScore;
+                    submission.submitted_at = DateTime.UtcNow;
+                    _context.Submissions.Update(submission);
 
                     await _context.SaveChangesAsync(); // Lưu tất cả thay đổi
 
@@ -142,10 +220,6 @@ namespace ELearningAPI.Controllers
                 }
             }
         }
-
-
-
-
 
         // PUT api/<SubmissionsController>/5
         [HttpPut("{id}")]

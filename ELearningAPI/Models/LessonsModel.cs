@@ -13,6 +13,6 @@ namespace ELearningAPI.Models
         [ForeignKey("course_id")]
         public Guid Course_ID { get; set; }
 
-        public DateTime Created_At { get; set; }
+        public DateTimeOffset Created_At { get; set; }
     }
 }

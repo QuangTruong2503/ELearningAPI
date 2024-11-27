@@ -16,7 +16,7 @@ namespace ELearningAPI.Models
 
         public required bool is_public { get; set; }
 
-        public DateTime created_at { get; set; }
+        public DateTimeOffset created_at { get; set; }
 
         public string? thumbnail { get; set; } = "https://res.cloudinary.com/brandocloud/image/upload/v1730959170/ELearning/Courses/courses-default.png";
 

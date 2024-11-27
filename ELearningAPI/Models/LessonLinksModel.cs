@@ -13,6 +13,6 @@ namespace ELearningAPI.Models
 
         public Guid Lesson_ID { get; set; }
 
-        public DateTime Created_At { get; set; }
+        public DateTimeOffset Created_At { get; set; }
     }
 }
