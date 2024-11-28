@@ -45,13 +45,32 @@ namespace ELearningAPI.Controllers
             });
         }
 
+        [HttpGet("by-exam-user")]
+        public async Task<IActionResult> GetByExamAndUser(Guid examID, Guid userID)
+        {
+            var submission = await _context.Submissions.FirstOrDefaultAsync(s => s.exam_id == examID && s.student_id == userID);
+            if (submission == null)
+            {
+                return Ok(new
+                {
+                    data = Empty,
+                    success = false,
+                });
+            }
+            return Ok(new
+            {
+                data = submission,
+                success = true
+            });
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateSubmission([FromBody] SubmissionsModel model)
         {
-            var sumission = await _context.Submissions.FirstOrDefaultAsync(s => s.student_id == model.student_id && s.exam_id == model.exam_id);
-            if (sumission != null)
+            var submissions = await _context.Submissions.FirstOrDefaultAsync(s => s.student_id == model.student_id && s.exam_id == model.exam_id);
+            if (submissions != null)
             {
-                if (sumission.submitted_at != null)
+                if (submissions.submitted_at != null)
                 {
                     return Ok(new
                     {
@@ -62,9 +81,18 @@ namespace ELearningAPI.Controllers
                     return Ok(new
                     {
                         isTesting = true,
-                        submissionID = sumission.submission_id
+                        submissionID = submissions.submission_id
                     });
             };
+            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.exam_id == model.exam_id);
+            if (exam != null && exam.finished_at.UtcDateTime < DateTime.UtcNow )
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Bài kiểm tra này đã quá hạn. Bạn không thể tham gia!"
+                });
+            }
             var newData = new SubmissionsModel()
             {
                 submission_id = Guid.NewGuid(),
@@ -98,7 +126,7 @@ namespace ELearningAPI.Controllers
         }
         // Tạo bài làm của học sinh
         [HttpPost("insert-answers")]
-        public async Task<IActionResult> CreateSubmission(
+        public async Task<IActionResult> InsertAnswer(
             [FromBody] List<QuestionsRequestDTO.QuestionRequest> questionRequests,
             Guid submissionID)
         {

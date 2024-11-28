@@ -1,6 +1,7 @@
 ﻿using ELearningAPI.Data;
 using ELearningAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -47,7 +48,32 @@ namespace ELearningAPI.Controllers
             }
         }
 
-
+        //Kiểm tra dữ liệu người dùng đã tham gia khóa học chưa
+        [HttpGet("check-user-in-course-by-exam")]
+        public async Task<IActionResult> CheckUserInCourse(Guid userID, Guid examID)
+        {
+            var userInCourse = await _context.Enrollments
+                    .AnyAsync(enroll => enroll.student_id == userID &&
+                        _context.Exams.Any(exam => exam.exam_id == examID && exam.course_id == enroll.course_id));
+            var courseID = await _context.Exams
+                .Where(exam => exam.exam_id == examID)
+                .Select(exam => exam.course_id)
+                .FirstOrDefaultAsync();
+            if (!userInCourse)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Bạn chưa tham gia khóa học",
+                    courseID = courseID,
+                });
+            }
+            return Ok(new
+            {
+                success = true,
+                message = "Bạn đã ở trong khóa học"
+            });
+        }
 
         // POST api/<ExamsController>
         [HttpPost]
