@@ -64,6 +64,67 @@ namespace ELearningAPI.Controllers
             });
         }
 
+        //Lấy dữ liệu bài thi và dữ liệu câu hỏi với kết quả đúng
+        [HttpGet("answer-and-questions")]
+        public async Task<IActionResult> GetAnswerAndQuestions(Guid submissionID, Guid userID)
+        {
+            // Tìm bài nộp
+            var submission = await _context.Submissions
+                .FirstOrDefaultAsync(s => s.submission_id == submissionID);
+
+            if (submission == null)
+            {
+                return Ok(new { success = false, message = "Không tìm thấy bài thi." });
+            }
+
+            // Kiểm tra người dùng có phải là người tạo bài thi không
+            if (submission.student_id != userID)
+            {
+                return Ok(new { success = false, message = "Bạn không phải là người tạo bài thi này." });
+            }
+
+            // Lấy dữ liệu câu hỏi và bài làm của sinh viên trong một truy vấn
+            var questionsWithAnswers = await (from q in _context.Questions
+                                              join a in _context.Answers on q.question_id equals a.question_id into answersGroup
+                                              where q.exam_id == submission.exam_id
+                                              select new
+                                              {
+                                                  q.question_id,
+                                                  q.question_text,
+                                                  q.scores,
+                                                  options = q.Options.Select(option => new
+                                                  {
+                                                      option.option_id,
+                                                      option.option_text,
+                                                      option.is_correct,
+                                                  }).ToList(),
+                                                  answers = answersGroup
+                                                      .Where(ans => ans.submission_id == submissionID)
+                                                      .Select(ans => new { ans.answer_id, ans.selected_option_id }).FirstOrDefault()
+                                              }).ToListAsync();
+
+            // Kiểm tra không có câu hỏi hoặc bài làm
+            if (!questionsWithAnswers.Any())
+            {
+                return Ok(new { success = false, message = "Không tìm thấy câu hỏi hoặc bài làm." });
+            }
+
+            // Trả về dữ liệu
+            return Ok(new
+            {
+                success = true,
+                questionsData = questionsWithAnswers.Select(q => new
+                {
+                    q.question_id,
+                    q.question_text,
+                    q.scores,
+                    options = q.options,
+                    answersData = q.answers
+                })
+            });
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> CreateSubmission([FromBody] SubmissionsModel model)
         {
@@ -124,6 +185,7 @@ namespace ELearningAPI.Controllers
             await _context.SaveChangesAsync();
             return Ok("Thêm dữ liệu thành công");
         }
+
         // Tạo bài làm của học sinh
         [HttpPost("insert-answers")]
         public async Task<IActionResult> InsertAnswer(

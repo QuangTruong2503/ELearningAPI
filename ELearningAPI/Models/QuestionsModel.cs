@@ -11,14 +11,9 @@ namespace ELearningAPI.Models
 
         public Guid exam_id { get; set; }
 
-        [Required]
-        public required string question_text { get; set; }
+        public  string question_text { get; set; }
 
-        [Required]
         public float scores { get; set; }
-        // Navigation property for the foreign key to Exams
-        [ForeignKey("exam_id")]
-        public virtual ExamsModel Exams { get; set; } // Assuming there is an Exam model
 
         // Navigation property for the related options
         public virtual ICollection<OptionsModel> Options { get; set; }

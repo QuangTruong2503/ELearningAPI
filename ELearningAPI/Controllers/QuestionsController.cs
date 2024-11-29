@@ -95,6 +95,31 @@ namespace ELearningAPI.Controllers
             }).ToListAsync();
             return Ok(result);
         }
+
+        //Up dữ liệu câu hỏi
+        [HttpPost]
+        public async Task<IActionResult> PostQuestions([FromBody] List<QuestionsDTO> model)
+        {
+            foreach (var question in model)
+            {
+                if (!_context.Exams.Any(e => e.exam_id == question.exam_id))
+                {
+                    return BadRequest("Khong qua bai thi nao ung voi ID: " + question.exam_id);
+                }
+                var newQuestion = new QuestionsModel()
+                {
+                    question_id = question.question_id,
+                    exam_id = question.exam_id,
+                    question_text = question.question_text,
+                    scores = question.scores
+                };
+                _context.Questions.Add(newQuestion);
+            }
+            await _context.SaveChangesAsync();
+            return Ok("Insert successfull!");
+        }
+        
+        
         //Thêm dữ liệu câu hỏi và các câu trả lời tương ứng với ID câu hỏi
         [HttpPost("upsert-questions-and-options")]
         public async Task<IActionResult> UpsertQuestion([FromBody] List<QuestionsRequestDTO.QuestionRequest> questionsRequest)
@@ -103,18 +128,19 @@ namespace ELearningAPI.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-            // Lấy danh sách tất cả các câu hỏi hiện có trong database
+            var examID = questionsRequest.Select(q => q.examId).FirstOrDefault();
+            // Lấy danh sách tất cả các câu hỏi tuong ung voi bai thi hiện có trong database
             var existingQuestions = await _context.Questions
                 .Include(q => q.Options) // Bao gồm các tùy chọn liên quan
+                .Where(q => q.exam_id == examID)
                 .ToListAsync();
 
             // Lấy danh sách các questionId được truyền vào
             var incomingQuestionIds = questionsRequest.Select(q => q.questionId).ToList();
 
-            // Xóa các câu hỏi trong database không có trong danh sách questionId được truyền vào
+            // Xóa các câu hỏi cua bai thi trong database không có trong danh sách questionId được truyền vào
             var questionsToDelete = existingQuestions
-                .Where(eq => !incomingQuestionIds.Contains(eq.question_id))
+                .Where(eq => !incomingQuestionIds.Contains(eq.question_id) && eq.exam_id == examID)
                 .ToList();
 
             if (questionsToDelete.Any())
@@ -223,6 +249,12 @@ namespace ELearningAPI.Controllers
         {
         }
     }
-
+    public class QuestionsDTO
+    {
+        public Guid question_id { get; set; }
+        public Guid exam_id { get; set; }
+        public string question_text { get; set; }
+        public float scores { get; set; }
+    }
     
 }

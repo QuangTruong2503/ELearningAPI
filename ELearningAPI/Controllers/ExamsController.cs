@@ -3,6 +3,7 @@ using ELearningAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
+using Pomelo.EntityFrameworkCore.MySql.Query.Internal;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -75,10 +76,34 @@ namespace ELearningAPI.Controllers
             });
         }
 
-        // POST api/<ExamsController>
-        [HttpPost]
-        public void Post([FromBody] string value)
+        // Thêm mới
+        [HttpPost("create-new")]
+        public async Task<IActionResult> CreateNew(Guid courseID)
         {
+            try
+            {
+                var exam = new ExamsModel()
+                {
+                    exam_id = Guid.NewGuid(),
+                    exam_name = "Bài thi mới",
+                    created_at = DateTime.UtcNow,
+                    exam_time = 60,
+                    finished_at = DateTime.UtcNow.AddDays(30),
+                    hide_result = false,
+                    total_score = 100,
+                    course_id = courseID,
+                };
+                _context.Exams.Add(exam);
+                await _context.SaveChangesAsync();
+                return Ok(new
+                {
+                    message = "Tạo mới bài thi thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
         }
 
         // PUT api/<ExamsController>/5
