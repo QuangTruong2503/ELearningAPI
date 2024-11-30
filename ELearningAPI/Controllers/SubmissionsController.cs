@@ -100,7 +100,7 @@ namespace ELearningAPI.Controllers
                                                   }).ToList(),
                                                   answers = answersGroup
                                                       .Where(ans => ans.submission_id == submissionID)
-                                                      .Select(ans => new { ans.answer_id, ans.selected_option_id }).FirstOrDefault()
+                                                      .Select(ans => new { ans.answer_id, ans.selected_option_id }).FirstOrDefault(),
                                               }).ToListAsync();
 
             // Kiểm tra không có câu hỏi hoặc bài làm
@@ -108,7 +108,15 @@ namespace ELearningAPI.Controllers
             {
                 return Ok(new { success = false, message = "Không tìm thấy câu hỏi hoặc bài làm." });
             }
-
+            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.exam_id == submission.exam_id);
+            if (exam == null)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Không tìm thấy thông tin bài thi"
+                });
+            }
             // Trả về dữ liệu
             return Ok(new
             {
@@ -120,7 +128,12 @@ namespace ELearningAPI.Controllers
                     q.scores,
                     options = q.options,
                     answersData = q.answers
-                })
+                }),
+                exam = new
+                {
+                    exam.exam_id,
+                    exam.exam_name,
+                }
             });
         }
 

@@ -49,17 +49,22 @@ namespace ELearningAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(Guid id)
         {
-            var detail = await _context.Users.Select(u => new
-            {
-                u.user_id,
-                u.user_name,
-                u.email,
-                u.created_at,
-                u.first_name,
-                u.last_name,
-                u.avatar_url,
-                u.role_id
-            }).FirstOrDefaultAsync(c => c.user_id == id);
+            var detail = await _context.Users
+                .Where(u => u.user_id == id)
+                .Join(_context.Roles,
+                u => u.role_id,
+                r => r.role_id,
+                (u, r) => new {
+                    u.user_id,
+                    u.user_name,
+                    u.email,
+                    u.created_at,
+                    u.first_name,
+                    u.last_name,
+                    u.avatar_url,
+                    u.role_id,
+                    r.role_name
+                }).FirstOrDefaultAsync();
             if (detail == null)
             {
                 return NotFound($"Không tìm thấy thông tin tài khoản: {id}");
