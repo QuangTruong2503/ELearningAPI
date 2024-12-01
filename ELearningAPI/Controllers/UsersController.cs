@@ -146,6 +146,34 @@ namespace ELearningAPI.Controllers
             }
 
         }
+
+        //Đổi mật khẩu
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(Guid userID, string currentPassword, string newPassword)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.user_id == userID);
+            if (user == null)
+            {
+                return BadRequest("Không tìm thấy tài khoản");
+            }
+            if (!PasswordHasher.VerifyPassword(currentPassword, user.hashed_password))
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Mật khẩu cũ không chính xác."
+                });
+            }
+            user.hashed_password = PasswordHasher.HashPassword(newPassword);
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return Ok(new
+            {
+                success = true,
+                message = "Cập nhật mật khẩu thành công"
+            });
+        }
+
         // PUT api/<UsersController>/5
         [HttpPut]
         public async Task<IActionResult> Put( [FromBody] UsersModel user)
@@ -194,6 +222,29 @@ namespace ELearningAPI.Controllers
                 isSuccess = true
             });
         }
+
+        //Cập nhật ảnh
+        [HttpPut("update-image")]
+        public async Task<IActionResult> UpdateImage(Guid userID, string imageURL)
+        {
+            var user = await _context.Users.FindAsync(userID);
+            if (user == null)
+            {
+                return BadRequest(new
+                {
+                    message = "Không tìm thấy người dùng"
+                });
+            }
+            user.avatar_url = imageURL;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return Ok(new
+            {
+                message = "Cập nhật ảnh đại diện thành công."
+            });
+        }
+
+        
 
         // DELETE api/<UsersController>/5
         [HttpDelete("{id}")]
