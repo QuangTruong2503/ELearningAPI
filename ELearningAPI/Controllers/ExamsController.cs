@@ -24,7 +24,7 @@ namespace ELearningAPI.Controllers
         {
             try
             {
-                var exams = await _context.Exams.Where(e => e.course_id == courseID).ToListAsync();
+                var exams = await _context.Exams.Where(e => e.course_id == courseID).OrderBy(e => e.created_at).ToListAsync();
                 return Ok(exams);
             }
             catch (Exception ex)
@@ -129,9 +129,25 @@ namespace ELearningAPI.Controllers
         }
 
         // DELETE api/<ExamsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpDelete()]
+        public async Task<IActionResult> Delete(Guid examID)
         {
+            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.exam_id == examID);
+            if (exam == null)
+            {
+                return Ok(new
+                {
+                    success= false,
+                    message = "Không tìm thấy bài thi"
+                });
+            }
+            _context.Exams.Remove(exam);
+            await _context.SaveChangesAsync();
+            return Ok(new
+            {
+                success = true,
+                message = $"Xóa bài thi: {exam.exam_name} thành công."
+            });
         }
     }
 }

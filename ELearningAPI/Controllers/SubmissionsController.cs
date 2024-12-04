@@ -69,24 +69,34 @@ namespace ELearningAPI.Controllers
         public async Task<IActionResult> GetAnswerAndQuestions(Guid submissionID, Guid userID)
         {
             // Tìm bài nộp
-            var submission = await _context.Submissions
-                .FirstOrDefaultAsync(s => s.submission_id == submissionID);
-
-            if (submission == null)
+            var result = await _context.Submissions
+                .Where(s => s.submission_id == submissionID)
+                .Join(_context.Exams, s => s.exam_id, e => e.exam_id, (s, e) => new
+                {
+                    submission = s,
+                    exam = e
+                })
+                .Join(_context.Courses, se => se.exam.course_id, c => c.course_id, (se, c) => new 
+                {
+                    submission = se.submission, exam = se.exam, course = c
+                })
+                .FirstOrDefaultAsync();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.user_id == userID);
+            if (result == null || user == null)
             {
-                return Ok(new { success = false, message = "Không tìm thấy bài thi." });
+                return Ok(new { success = false, message = "Không tìm thấy dữ liệu." });
             }
 
             // Kiểm tra người dùng có phải là người tạo bài thi không
-            if (submission.student_id != userID)
+            if (result.submission.student_id != user.user_id && result.course.teacher_id != user.user_id && user.role_id != "admin")
             {
-                return Ok(new { success = false, message = "Bạn không phải là người tạo bài thi này." });
+                return Ok(new { success = false, message = "Bạn không được truy cập vào kết quả bài làm này." });
             }
 
             // Lấy dữ liệu câu hỏi và bài làm của sinh viên trong một truy vấn
             var questionsWithAnswers = await (from q in _context.Questions
                                               join a in _context.Answers on q.question_id equals a.question_id into answersGroup
-                                              where q.exam_id == submission.exam_id
+                                              where q.exam_id == result.submission.exam_id
                                               select new
                                               {
                                                   q.question_id,
@@ -108,7 +118,7 @@ namespace ELearningAPI.Controllers
             {
                 return Ok(new { success = false, message = "Không tìm thấy câu hỏi hoặc bài làm." });
             }
-            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.exam_id == submission.exam_id);
+            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.exam_id == result.submission.exam_id);
             if (exam == null)
             {
                 return BadRequest(new
@@ -133,6 +143,18 @@ namespace ELearningAPI.Controllers
                 {
                     exam.exam_id,
                     exam.exam_name,
+                    exam.total_score,
+                },
+                user = new
+                {
+                    user.first_name,
+                    user.last_name,
+                },
+                submission = new
+                {
+                    result.submission.started_at,
+                    result.submission.submitted_at,
+                    result.submission.scores
                 }
             });
         }
