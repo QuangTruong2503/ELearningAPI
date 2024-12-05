@@ -74,7 +74,7 @@ namespace ELearningAPI.Controllers
         
         //Tạo tài khoản mới
         // POST api/<UsersController>
-        [HttpPost]
+        [HttpPost("register")]
         public async Task<IActionResult> Post([FromBody] UsersModel users)
         {
             if (users == null)
@@ -83,12 +83,21 @@ namespace ELearningAPI.Controllers
             }
             try
             {
-                users.user_id = Guid.NewGuid();
-                users.hashed_password = PasswordHasher.HashPassword(users.hashed_password);
-                users.created_at = DateTime.UtcNow;
-                _context.Users.Add(users);
+                var data = new UsersModel()
+                {
+                    user_id = Guid.NewGuid(),
+                    email = users.email,
+                    first_name = users.first_name,
+                    last_name = users.last_name,
+                    role_id = users.role_id,
+                    user_name = users.user_name,
+                    hashed_password = PasswordHasher.HashPassword(users.hashed_password),
+                    avatar_url = "https://res.cloudinary.com/brandocloud/image/upload/v1730775157/ELearning/avatar/avatar_default.png",
+                    created_at = DateTime.UtcNow,
+                };
+                _context.Users.Add(data);
                 await _context.SaveChangesAsync();
-                return Ok(new { message = "Tạo tài khoản mới thành công.", isSuccess = true, data = users });
+                return Ok(new { message = "Tạo tài khoản mới thành công.", isSuccess = true, data = data });
             }
             catch (DbUpdateException ex)
             {
