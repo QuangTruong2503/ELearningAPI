@@ -216,6 +216,31 @@ namespace ELearningAPI.Controllers
             });
         }
 
+        //Lấy dữ liệu theo tên tìm kiếm
+        [HttpGet("search-by-name")]
+        public async Task<IActionResult> GetBySearchValue(string searchValue)
+        {
+            try
+            {
+                var result = await _context.Courses.Where(c => c.course_name.Contains(searchValue))
+                    .Join(_context.Users, c => c.teacher_id, u => u.user_id,
+                    (c, u) => new
+                    {
+                        c.course_id,
+                        c.course_name,
+                        c.thumbnail,
+                        c.description,
+                        c.is_public,
+                        teacherFullName = $"{u.first_name} {u.last_name}" 
+                    }).ToListAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Lỗi khi tìm khóa học: ${ex.Message}");
+            }
+        }
+
         // POST api/<CoursesController>
         [HttpPost]
         public async Task<IActionResult> Post(CoursesModel model)
