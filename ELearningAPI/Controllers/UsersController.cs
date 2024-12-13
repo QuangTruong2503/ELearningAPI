@@ -27,7 +27,7 @@ namespace ELearningAPI.Controllers
             var users = await _context.Users.ToListAsync();
             if (!string.IsNullOrEmpty(search))
             {
-                users = users.Where(u => u.email.Contains(search) || u.first_name.Contains(search) || u.last_name.Contains(search)).ToList();
+                users = users.Where(u => u.email.Contains(search) || u.first_name.ToLower().Contains(search.ToLower()) || u.last_name.ToLower().Contains(search.ToLower())).ToList();
             }
 
             //Phân trang
