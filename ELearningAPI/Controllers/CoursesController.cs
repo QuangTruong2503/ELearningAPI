@@ -222,7 +222,7 @@ namespace ELearningAPI.Controllers
         {
             try
             {
-                var result = await _context.Courses.Where(c => c.course_name.Contains(searchValue))
+                var result = await _context.Courses.Where( c => c.is_public && c.course_name.Contains(searchValue))
                     .Join(_context.Users, c => c.teacher_id, u => u.user_id,
                     (c, u) => new
                     {
