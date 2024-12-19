@@ -75,7 +75,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", builder =>
     {
-        builder.WithOrigins("http://localhost:3000", "https://e-learning-project-alpha.vercel.app") // Cho phép các trang web được sử dụng
+        builder.WithOrigins("http://localhost:3000", "https://e-learning-project-alpha.vercel.app", "https://www.quantruong2503.xyz") // Cho phép các trang web được sử dụng
                .AllowAnyHeader()
                .AllowAnyMethod();
     });
