@@ -17,7 +17,7 @@ namespace ELearningAPI.Controllers
         }
         // GET: api/<ChartsController>
         [HttpGet("user-register-by-months")]
-        public async Task<IActionResult> GetUserRegisterByMonth()
+        public async Task<IActionResult> GetUserRegisterByMonth(int year)
         {
             // Khởi tạo danh sách để lưu dữ liệu cho từng tháng
             var monthlyData = new List<object>();
@@ -26,7 +26,7 @@ namespace ELearningAPI.Controllers
             {
                 // Đếm số lượng người dùng đăng ký trong tháng
                 var userCount = await _context.Users
-                    .Where(u => u.created_at.HasValue && u.created_at.Value.Month == month)
+                    .Where(u => u.created_at.HasValue && u.created_at.Value.Year == year && u.created_at.Value.Month == month)
                     .CountAsync();
 
                 // Thêm dữ liệu vào danh sách
