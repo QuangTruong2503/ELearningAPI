@@ -142,12 +142,17 @@ namespace ELearningAPI.Controllers
                     Email = user?.email,
                     HasSubmitted = submission != null, // True nếu có bài làm, False nếu không
                     SubmissionScore = submission?.scores, // Điểm số bài làm nếu có
+                    TimeSuccess = submission?.submitted_at - submission?.started_at,
                     SubmittedAt = submission?.submitted_at, // Thời gian nộp bài nếu có
                     SubmissionID = submission?.submission_id,
                 });
             }
 
-            return Ok(result);
+            return Ok(new
+            {
+                student = result,
+                examName = exam.exam_name
+            });
         }
 
 
