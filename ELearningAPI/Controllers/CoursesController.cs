@@ -201,7 +201,8 @@ namespace ELearningAPI.Controllers
         public async Task<IActionResult> CheckOwnerCourse(Guid userID, Guid courseID)
         {
             var check = await _context.Courses.Where(c => c.course_id == courseID && c.teacher_id == userID).AnyAsync();
-            if (check == false)
+            var isAdmin = await _context.Users.Where(u => u.user_id == userID && u.role_id == "admin").AnyAsync();
+            if (check == false && isAdmin == false)
             {
                 return Ok(new
                 {
