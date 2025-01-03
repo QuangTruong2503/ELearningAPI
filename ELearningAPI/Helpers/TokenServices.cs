@@ -1,4 +1,6 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using ELearningAPI.Models;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -14,11 +16,11 @@ namespace ELearningAPI.Helpers
         }
         public string GenerateToken(string userID, string role)
         {
-            var claims = new[]
+            var claims = new List<Claim>()
             {
-            new Claim("userID", userID),
-            new Claim("roleID", role)
-        };
+                new Claim("userID", userID),
+                new Claim("roleID", role)
+            };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -30,10 +32,10 @@ namespace ELearningAPI.Helpers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-        public ClaimsPrincipal DecodeToken(string token)
+        public string DecodeToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes("23f9dc32-e9ee-4f39-b1dd-040a6b69ac21");
+            var key = Encoding.UTF8.GetBytes(_secretKey);
             var tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -46,7 +48,12 @@ namespace ELearningAPI.Helpers
             try
             {
                 var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
-                return principal;
+
+                // Chuyển đổi các claim sang dictionary
+                var claimsDictionary = principal.Claims.ToDictionary(c => c.Type, c => c.Value);
+
+                // Serialize dictionary thành JSON
+                return JsonConvert.SerializeObject(claimsDictionary);
             }
             catch
             {
@@ -54,6 +61,7 @@ namespace ELearningAPI.Helpers
                 return null;
             }
         }
+
 
     }
 }

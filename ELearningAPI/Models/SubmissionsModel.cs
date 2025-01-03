@@ -14,9 +14,11 @@ namespace ELearningAPI.Models
         [ForeignKey("user")]
         public Guid student_id { get; set; }
 
+        public DateTimeOffset started_at { get; set; }
 
-        public DateTime submitted_at { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset? submitted_at { get; set; }
 
-        public int? scores { get; set; }
+        public float scores { get; set; }
+
     }
 }

@@ -16,8 +16,10 @@ namespace ELearningAPI.Data
         public DbSet<UsersModel> Users { get; set; }
 
         //Khai báo Khóa học (Courses)
+        public DbSet<SubjectsModel> Subjects { get; set; }
         public DbSet<CoursesModel> Courses { get; set; }
         public DbSet<LessonsModel> Lessons { get; set; }
+        public DbSet<LessonLinksModel> Lesson_Links { get; set; }
         public DbSet<ExamsModel> Exams { get; set; }
         public DbSet<QuestionsModel> Questions { get; set; }
         public DbSet<OptionsModel> Options { get; set; }

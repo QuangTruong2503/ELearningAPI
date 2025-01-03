@@ -8,23 +8,21 @@ namespace ELearningAPI.Models
         [Key]
         public Guid course_id { get; set; }
 
-        [Required]
-        [MaxLength(255)]
         public required string course_name { get; set; }
 
         public string? description { get; set; }
 
-
-        public required string invite_code { get; set; }
+        public  string? invite_code { get; set; }
 
         public required bool is_public { get; set; }
 
-        public DateTime created_at { get; set; } = DateTime.UtcNow;
+        public DateTimeOffset created_at { get; set; }
 
-        [ForeignKey("user")]
+        public string? thumbnail { get; set; } = "https://res.cloudinary.com/brandocloud/image/upload/v1730959170/ELearning/Courses/courses-default.png";
+
         public Guid teacher_id { get; set; }
 
-        [ForeignKey("subject")]
-        public int subject_id { get; set; }
+        public required string subject_id { get; set; }
+
     }
 }

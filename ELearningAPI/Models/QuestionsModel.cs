@@ -1,24 +1,21 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.CodeAnalysis.Options;
 
 namespace ELearningAPI.Models
 {
     public class QuestionsModel
     {
         [Key]
-        public int question_id { get; set; }
+        public Guid question_id { get; set; }
 
-        [ForeignKey("exam")]
         public Guid exam_id { get; set; }
 
-        public ExamsModel exam { get; set; }
+        public  string question_text { get; set; }
 
-        [Required]
-        public required string question_text { get; set; }
+        public float scores { get; set; }
 
-        [Required]
-        public int scores { get; set; }
-        // List of Options associated with this question
-        public List<OptionsModel> options { get; set; } = new List<OptionsModel>();
+        // Navigation property for the related options
+        public virtual ICollection<OptionsModel> Options { get; set; }
     }
 }

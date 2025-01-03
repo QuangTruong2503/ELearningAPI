@@ -55,7 +55,8 @@ if (!string.IsNullOrEmpty(sslCaCert))
     var MySQLPassword = Environment.GetEnvironmentVariable("MYSQL_PASSWORD");
 
     // Cập nhật chuỗi kết nối MySQL với đường dẫn chứng chỉ
-    string connectionString = $"Server={serverName};Port=22588;Database=ELearning;User={MySQLUserName};Password={MySQLPassword};SslMode=REQUIRED;SslCa={caCertPath};";
+    string connectionString = $"Server={serverName};Port=22588;Database=ELearning;" +
+        $"User={MySQLUserName};Password={MySQLPassword};SslMode=REQUIRED;SslCa={caCertPath};";
 
     // Cấu hình DbContext với chuỗi kết nối MySQL
     builder.Services.AddDbContext<ELearningDbContext>(options =>
@@ -72,9 +73,9 @@ else
 // Thêm CORS vào dịch vụ
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins", builder =>
+    options.AddPolicy("AllowSpecificOrigins", builder =>
     {
-        builder.AllowAnyOrigin() // Cho phép sử dụng bởi bất kỳ trang web nào
+        builder.WithOrigins("http://localhost:3000", "https://e-learning-project-alpha.vercel.app", "https://www.quantruong2503.xyz") // Cho phép các trang web được sử dụng
                .AllowAnyHeader()
                .AllowAnyMethod();
     });
@@ -89,7 +90,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 // Áp dụng chính sách CORS
-app.UseCors("AllowAllOrigins");
+app.UseCors("AllowSpecificOrigins");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

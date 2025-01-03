@@ -1,5 +1,6 @@
 ﻿using ELearningAPI.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -22,10 +23,11 @@ namespace ELearningAPI.Controllers
         }
 
         // GET api/<AnswersController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("get/by-submission")]
+        public async Task<IActionResult> GetAnswerBySubmission(Guid submissionID)
         {
-            return "value";
+            var answers = await _context.Answers.Where(a => a.submission_id == submissionID).ToListAsync();
+            return Ok(answers);
         }
 
         // POST api/<AnswersController>

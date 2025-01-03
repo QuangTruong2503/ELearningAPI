@@ -5,7 +5,7 @@
         public static string GetVerificationCode()
         {
             // Define the character set for the verification code
-            char[] chArray = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
+            char[] chArray = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
             string str = string.Empty;
             Random random = new Random();
 
